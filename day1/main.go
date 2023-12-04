@@ -42,12 +42,13 @@ func part2(content string) int {
 			digit := int(line[n] - '0')
 			if digit > 0 && digit <= 9 {
 				founds[n] = digit
-			}
-			// look for spelled-out digits
-			for v, w := range valid_spelled_numbers {
-				index := strings.Index(line[n:], w)
-				if index >= 0 {
-					founds[n+index] = v + 1
+			} else {
+				// look for spelled-out digits
+				for v, w := range valid_spelled_numbers {
+					index := strings.Index(line[n:], w)
+					if index >= 0 {
+						founds[n+index] = v + 1
+					}
 				}
 			}
 		}
