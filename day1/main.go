@@ -35,7 +35,7 @@ func part2(content string) int {
 		"one", "two", "three", "four", "five", "six", "seven", "eight", "nine",
 	}
 
-	for line_num, line := range strings.Split(content, "\n") {
+	for _, line := range strings.Split(content, "\n") {
 		founds := make(map[int]int)
 		for n := 0; n < len(line); n++ {
 			// look for regular digits
@@ -65,7 +65,6 @@ func part2(content string) int {
 			}
 		}
 		value := founds[min_idx]*10 + founds[max_idx]
-		log.Printf("%d -> %d\n", line_num+1, value)
 		sum += value
 	}
 
