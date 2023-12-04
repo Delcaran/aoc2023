@@ -41,6 +41,8 @@ func (s *Schematic) parse(content string) {
 }
 
 func (s *Schematic) isPartNumber(n Number) bool {
+	log.Printf("Number %s", n.num)
+
 	left_idx := max(n.col-1, 0)
 	right_idx := min(n.col+n.len, s.cols-1)
 	top_idx := max(n.row-1, 0)
@@ -87,10 +89,8 @@ func (s *Schematic) isPartNumber(n Number) bool {
 func (s *Schematic) sumPartNumbers() int {
 	sum := 0
 	for _, n := range s.numbers {
-		log.Printf("Number %s", n.num)
 		n.pn = s.isPartNumber(n)
 		if n.pn {
-
 			num, err := strconv.Atoi(n.num)
 			if err != nil {
 				log.Fatal(err)
