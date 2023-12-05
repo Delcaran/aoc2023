@@ -1,11 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 type Number struct {
@@ -13,101 +14,95 @@ type Number struct {
 	row int
 	col int
 	len int
-	pn  bool
 }
 
 type Schematic struct {
-	cols    int
-	rows    int
-	data    []string
-	numbers []Number
+	cols  int
+	rows  int
+	valid [][]bool
 }
 
-func (s *Schematic) parse(content string) {
-	regex := regexp.MustCompile(`(\d+)`)
-	for row, line := range strings.Split(content, "\n") {
-		if len(line) > 0 {
-			s.cols = len(line) - 1
-			s.data = append(s.data, line)
-			match := regex.FindAllStringSubmatch(line, -1)
-			for _, m := range match {
-				col := strings.Index(line, m[0])
-				num := Number{num: m[0], row: row, col: col, len: len(m[0])}
-				s.numbers = append(s.numbers, num)
-			}
-			s.rows = row + 1
+func (s *Schematic) parse(content string) int {
+	lines := strings.Fields(strings.TrimSpace(content))
+	s.rows = len(lines)
+	s.cols = len(lines[0])
+	s.valid = make([][]bool, s.rows)
+	for i := range s.valid {
+		s.valid[i] = make([]bool, s.cols)
+		for j := range s.valid[i] {
+			s.valid[i][j] = false
 		}
 	}
-}
-
-func (s *Schematic) isPartNumber(n Number) bool {
-	log.Printf("Number %s", n.num)
-
-	left_idx := max(n.col-1, 0)
-	right_idx := min(n.col+n.len, s.cols-1)
-	top_idx := max(n.row-1, 0)
-	bottom_idx := min(n.row+1, s.rows-1)
-
-	left_dot := 1
-	right_dot := 1
-	if left_idx == n.col {
-		left_dot = 0
+	// check valid data
+	for row, line := range lines {
+		for col, char := range line {
+			if !unicode.IsDigit(char) && char != '.' {
+				up := max(0, row-1)
+				down := min(s.rows-1, row+1)
+				left := max(0, col-1)
+				right := min(s.cols-1, col+1)
+				s.valid[up][left] = true
+				s.valid[up][col] = true
+				s.valid[up][right] = true
+				s.valid[row][left] = true
+				s.valid[row][col] = true
+				s.valid[row][right] = true
+				s.valid[down][left] = true
+				s.valid[down][col] = true
+				s.valid[down][right] = true
+			}
+		}
 	}
-	if right_idx == n.col+n.len-1 {
-		right_dot = 0
-	}
-	str_len := n.len + left_dot + right_dot
 
-	up_down_regex := regexp.MustCompile(`^\.{` + strconv.Itoa(str_len) + `}$`)
-	central_regex := regexp.MustCompile(`^\.{` + strconv.Itoa(left_dot) + `}` + n.num + `\.{` + strconv.Itoa(right_dot) + `}$`)
-
-	top_row := s.data[top_idx][left_idx : right_idx+1]
-	bottom_row := s.data[bottom_idx][left_idx : right_idx+1]
-	number_row := s.data[n.row][left_idx : right_idx+1]
-
-	match_up := true
-	if top_idx != n.row {
-		log.Printf("\t%s\n", top_row)
-		match_up = up_down_regex.MatchString(top_row)
-	}
-	match_central := central_regex.MatchString(number_row)
-	log.Printf("\t%s\n", number_row)
-	match_down := true
-	if bottom_idx != n.row {
-		match_down = up_down_regex.MatchString(bottom_row)
-		log.Printf("\t%s\n", bottom_row)
-	}
-	not_pn := match_up && match_down && match_central
-	if not_pn {
-		log.Printf("\tnot a part number")
-	} else {
-		log.Printf("\tis part number")
-	}
-	return !not_pn
-}
-
-func (s *Schematic) sumPartNumbers() int {
+	// get part numbers
 	sum := 0
-	for _, n := range s.numbers {
-		n.pn = s.isPartNumber(n)
-		if n.pn {
-			num, err := strconv.Atoi(n.num)
-			if err != nil {
-				log.Fatal(err)
+	for row, line := range lines {
+		//fmt.Printf("----- %d -----\n", row+1)
+		tmp_num := []rune{}
+		valid := false
+		for col, char := range line {
+			if unicode.IsDigit(char) {
+				tmp_num = append(tmp_num, char)
+				//fmt.Printf("%d,%d = %v\n", row, col, s.valid[row][col])
+				if s.valid[row][col] {
+					valid = true
+				}
+			} else {
+				// finished parsing number
+				sum += check_num(string(tmp_num), valid)
+				valid = false
+				tmp_num = []rune{}
 			}
-			sum += num
-		} else {
-
 		}
-
+		// check right border numbers
+		sum += check_num(string(tmp_num), valid)
+		valid = false
+		tmp_num = []rune{}
 	}
 	return sum
 }
 
+func check_num(num_str string, valid bool) int {
+	if len(num_str) > 0 {
+		//fmt.Printf("%s ", num_str)
+		if valid {
+			num, err := strconv.Atoi(num_str)
+			if err != nil {
+				log.Fatal(err)
+			}
+			//fmt.Printf("part number\n")
+			return num
+		} else {
+			//fmt.Printf("not a part number\n")
+			return 0
+		}
+	}
+	return 0
+}
+
 func part1(content string) int {
 	var schema Schematic
-	schema.parse(content)
-	return schema.sumPartNumbers()
+	return schema.parse(content)
 }
 
 func main() {
@@ -117,5 +112,5 @@ func main() {
 	}
 
 	content := string(buffer[:])
-	log.Printf("Part 1: %d\n", part1(content))
+	fmt.Printf("Part 1: %d\n", part1(content))
 }
