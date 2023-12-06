@@ -1,4 +1,4 @@
-package main
+package day2
 
 import (
 	"log"
@@ -8,24 +8,24 @@ import (
 	"strings"
 )
 
-type Extraction struct {
+type extraction_t struct {
 	red   int
 	green int
 	blue  int
 }
 
-func (c *Extraction) isPossible(e Extraction) bool {
+func (c *extraction_t) isPossible(e extraction_t) bool {
 	red_ok := c.red <= e.red
 	green_ok := c.green <= e.green
 	blue_ok := c.blue <= e.blue
 	return red_ok && green_ok && blue_ok
 }
 
-func (c *Extraction) power() int {
+func (c *extraction_t) power() int {
 	return c.red * c.blue * c.green
 }
 
-func (c *Extraction) parse(s string) {
+func (c *extraction_t) parse(s string) {
 	c.red = 0
 	c.green = 0
 	c.blue = 0
@@ -61,13 +61,13 @@ func (c *Extraction) parse(s string) {
 	}
 }
 
-type Game struct {
+type game_t struct {
 	id          int
-	extractions []Extraction
+	extractions []extraction_t
 }
 
-func (g *Game) minimal() Extraction {
-	min := Extraction{0, 0, 0}
+func (g *game_t) minimal() extraction_t {
+	min := extraction_t{0, 0, 0}
 	for _, ext := range g.extractions {
 		min.red = max(min.red, ext.red)
 		min.green = max(min.green, ext.green)
@@ -76,21 +76,21 @@ func (g *Game) minimal() Extraction {
 	return min
 }
 
-func (g *Game) power() int {
+func (g *game_t) power() int {
 	min := g.minimal()
 	return min.power()
 }
 
-func (g *Game) isPossible(e Extraction) bool {
+func (g *game_t) isPossible(e extraction_t) bool {
 	for _, ext := range g.extractions {
-		if ext.isPossible(e) == false {
+		if !ext.isPossible(e) {
 			return false
 		}
 	}
 	return true
 }
 
-func (g *Game) parse(s string) bool {
+func (g *game_t) parse(s string) bool {
 	regex := regexp.MustCompile(`Game (?P<game>\d+):(?P<extractions>.*)`)
 	match := regex.FindStringSubmatch(s)
 	if len(match) > 0 {
@@ -107,7 +107,7 @@ func (g *Game) parse(s string) bool {
 		}
 		extractions_str := result["extractions"]
 		for _, extraction_str := range strings.Split(extractions_str, ";") {
-			var e Extraction
+			var e extraction_t
 			e.parse(extraction_str)
 			g.extractions = append(g.extractions, e)
 		}
@@ -116,10 +116,10 @@ func (g *Game) parse(s string) bool {
 	return false
 }
 
-func getGames(content string) []Game {
-	var games []Game
+func getGames(content string) []game_t {
+	var games []game_t
 	for _, line := range strings.Split(content, "\n") {
-		var g Game
+		var g game_t
 		if g.parse(line) {
 			games = append(games, g)
 		}
@@ -128,7 +128,7 @@ func getGames(content string) []Game {
 }
 
 func part1(content string) int {
-	given_cubes := Extraction{red: 12, green: 13, blue: 14}
+	given_cubes := extraction_t{red: 12, green: 13, blue: 14}
 	sum := 0
 	for _, g := range getGames(content) {
 		if g.isPossible(given_cubes) {
@@ -146,8 +146,11 @@ func part2(content string) int {
 	return sum
 }
 
-func main() {
-	buffer, err := os.ReadFile("input.txt")
+func Run(test bool) {
+	buffer, err := os.ReadFile("day2/input.txt")
+	if test {
+		buffer, err = os.ReadFile("day2/test_input.txt")
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

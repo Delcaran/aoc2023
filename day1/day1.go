@@ -1,4 +1,4 @@
-package main
+package day1
 
 import (
 	"log"
@@ -71,8 +71,11 @@ func part2(content string) int {
 	return sum
 }
 
-func main() {
-	buffer, err := os.ReadFile("input")
+func Run(test bool) {
+	buffer, err := os.ReadFile("day1/input.txt")
+	if test {
+		buffer, err = os.ReadFile("day1/test_input.txt")
+	}
 	if err != nil {
 		log.Fatal(err)
 	}

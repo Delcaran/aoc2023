@@ -1,4 +1,4 @@
-package main
+package day3
 
 import (
 	"fmt"
@@ -9,14 +9,14 @@ import (
 	"unicode"
 )
 
-type Gear struct {
+type gear_t struct {
 	col     int
 	row     int
 	numbers []int
 	zone    [][]bool
 }
 
-func (g *Gear) init(s *Schematic, row int, col int) {
+func (g *gear_t) init(s *schematic_t, row int, col int) {
 	g.zone = make([][]bool, s.rows)
 	for i := range g.zone {
 		g.zone[i] = make([]bool, s.cols)
@@ -44,7 +44,7 @@ func (g *Gear) init(s *Schematic, row int, col int) {
 	g.zone[down][right] = true
 }
 
-func (g *Gear) ratio() int {
+func (g *gear_t) ratio() int {
 	if len(g.numbers) != 2 {
 		return 0
 	}
@@ -55,11 +55,11 @@ func (g *Gear) ratio() int {
 	return prod
 }
 
-func (g *Gear) equal(o *Gear) bool {
+func (g *gear_t) equal(o *gear_t) bool {
 	return g.col == o.col && g.row == o.row
 }
 
-func (g *Gear) add_part_number(num int) bool {
+func (g *gear_t) add_part_number(num int) bool {
 	if len(g.numbers) != 2 {
 		g.numbers = append(g.numbers, num)
 		return true
@@ -67,7 +67,7 @@ func (g *Gear) add_part_number(num int) bool {
 	return false
 }
 
-func (g *Gear) in_range(nrow int, ncol int) bool {
+func (g *gear_t) in_range(nrow int, ncol int) bool {
 	for r, row := range g.zone {
 		for c := range row {
 			if row[c] && nrow == r && ncol == c {
@@ -78,30 +78,26 @@ func (g *Gear) in_range(nrow int, ncol int) bool {
 	return false
 }
 
-type PartNumber struct {
+type part_number_t struct {
 	value int
-	gears []*Gear
+	gears []*gear_t
 }
 
-func (pn *PartNumber) equal(pno *PartNumber) bool {
-	return pn.value == pno.value
-}
-
-type Schematic struct {
+type schematic_t struct {
 	schema       []string
 	cols         int
 	rows         int
 	valid        [][]bool
-	gears        []Gear
-	part_numbers []PartNumber
+	gears        []gear_t
+	part_numbers []part_number_t
 }
 
-func (s *Schematic) find_part_numbers() {
+func (s *schematic_t) find_part_numbers() {
 	for row, line := range s.schema {
 		//fmt.Printf("----- %d -----\n", row+1)
 		tmp_num := []rune{}
 		valid := false
-		var possible_gears []*Gear
+		var possible_gears []*gear_t
 		for col, char := range line {
 			if unicode.IsDigit(char) {
 				tmp_num = append(tmp_num, char)
@@ -126,7 +122,7 @@ func (s *Schematic) find_part_numbers() {
 				}
 			} else {
 				// finished parsing number
-				var pn PartNumber
+				var pn part_number_t
 				pn.value = check_num(string(tmp_num), valid)
 				pn.gears = possible_gears
 				if pn.value != 0 {
@@ -138,19 +134,17 @@ func (s *Schematic) find_part_numbers() {
 			}
 		}
 		// check right border numbers
-		var pn PartNumber
+		var pn part_number_t
 		pn.value = check_num(string(tmp_num), valid)
 		pn.gears = possible_gears
 		if pn.value != 0 {
 			s.part_numbers = append(s.part_numbers, pn)
 		}
 		valid = false
-		possible_gears = possible_gears[:0]
-		tmp_num = []rune{}
 	}
 }
 
-func (s *Schematic) find_gears() {
+func (s *schematic_t) find_gears() {
 	for _, pn := range s.part_numbers {
 		for _, g := range pn.gears {
 			// find global
@@ -158,7 +152,7 @@ func (s *Schematic) find_gears() {
 			for sidx := range s.gears {
 				sg := &s.gears[sidx]
 				if sg.equal(g) {
-					if sg.add_part_number(pn.value) == false {
+					if !sg.add_part_number(pn.value) {
 						to_delete_global = sidx
 					}
 				}
@@ -174,7 +168,7 @@ func (s *Schematic) find_gears() {
 	}
 }
 
-func (s *Schematic) parse(content string) {
+func (s *schematic_t) parse(content string) {
 	s.schema = strings.Fields(strings.TrimSpace(content))
 	s.rows = len(s.schema)
 	s.cols = len(s.schema[0])
@@ -204,7 +198,7 @@ func (s *Schematic) parse(content string) {
 				s.valid[down][right] = true
 
 				if char == '*' {
-					var new_g Gear
+					var new_g gear_t
 					new_g.init(s, row, col)
 					s.gears = append(s.gears, new_g)
 				}
@@ -233,7 +227,7 @@ func check_num(num_str string, valid bool) int {
 	return 0
 }
 
-func part1(s *Schematic) int {
+func part1(s *schematic_t) int {
 	sum := 0
 	for _, pn := range s.part_numbers {
 		sum += pn.value
@@ -241,7 +235,7 @@ func part1(s *Schematic) int {
 	return sum
 }
 
-func part2(s *Schematic) int {
+func part2(s *schematic_t) int {
 	sum := 0
 	for _, g := range s.gears {
 		ratio := g.ratio()
@@ -250,14 +244,17 @@ func part2(s *Schematic) int {
 	return sum
 }
 
-func main() {
-	buffer, err := os.ReadFile("test_input.txt")
+func Run(test bool) {
+	buffer, err := os.ReadFile("day3/input.txt")
+	if test {
+		buffer, err = os.ReadFile("day3/test_input.txt")
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	content := string(buffer[:])
-	var schema Schematic
+	var schema schematic_t
 	schema.parse(content)
 
 	fmt.Printf("Part 1: %d\n", part1(&schema))
