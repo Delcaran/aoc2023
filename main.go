@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	test := 0
+	test := ""
 	day := 0
 	var err error
 	switch len(os.Args[1:]) {
@@ -25,22 +25,19 @@ func main() {
 		if err != nil {
 			log.Fatal("Wrong day...")
 		}
-		test, err = strconv.Atoi(os.Args[2])
-		if err != nil {
-			log.Fatal("Wrong test...")
-		}
+		test = os.Args[2]
 	default:
 		day = 3
-		test = 1
+		test = "test"
 	}
 
 	switch day {
 	case 1:
-		day1.Run(test > 0)
+		day1.Run(test)
 	case 2:
-		day2.Run(test > 0)
+		day2.Run(test)
 	case 3:
-		day3.Run(test > 0)
+		day3.Run(test)
 	default:
 		log.Fatal("Day not done")
 	}

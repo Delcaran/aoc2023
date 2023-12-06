@@ -146,11 +146,11 @@ func part2(content string) int {
 	return sum
 }
 
-func Run(test bool) {
-	buffer, err := os.ReadFile("day2/input.txt")
-	if test {
-		buffer, err = os.ReadFile("day2/test_input.txt")
+func Run(test string) {
+	if len(test) > 0 {
+		test += "_"
 	}
+	buffer, err := os.ReadFile("day2/" + test + "input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
