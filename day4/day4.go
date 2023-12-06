@@ -1,6 +1,7 @@
 package day4
 
 import (
+	"fmt"
 	"log"
 	"os"
 )
@@ -14,5 +15,5 @@ func Run(test string) {
 		log.Fatal(err)
 	}
 	content := string(buffer[:])
-
+	fmt.Println(content)
 }
