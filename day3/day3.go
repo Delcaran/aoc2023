@@ -208,32 +208,24 @@ func (m *schematic) Run() {
 	m.filter_gears()
 }
 
-func (m schematic) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-
-	// Is it a key press?
-	case tea.KeyMsg:
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		}
+func (m *schematic) part1() int {
+	sum := 0
+	for _, pn := range m.part_numbers {
+		sum += pn.value
 	}
-
-	return m, nil
+	return sum
 }
 
-const (
-	NONE             = iota
-	VALID            = iota
-	GEAR_RANGE       = iota
-	PART_NUMBER      = iota
-	GEAR_PART_NUMBER = iota
-)
+func (m *schematic) part2() int {
+	sum := 0
+	for _, g := range m.symbols {
+		ratio := g.ratio()
+		sum += ratio
+	}
+	return sum
+}
 
-func (m schematic) View() string {
+func (m *schematic) Print() string {
 	s := ""
 	for r, line := range m.schema {
 		for c, char := range line {
@@ -261,11 +253,10 @@ func (m schematic) View() string {
 				} else {
 					for _, sym := range symbols {
 						if sym.is_gear() {
-							relevance = GEAR_RANGE
+							relevance = max(relevance, GEAR_RANGE)
 						} else {
-							relevance = VALID
+							relevance = max(relevance, VALID)
 						}
-						break
 					}
 				}
 			}
@@ -288,11 +279,41 @@ func (m schematic) View() string {
 		s += "\n"
 	}
 	s += "\n"
-	s += fmt.Sprintf("Sum Part Number: %d\n", part1(m))
-	s += fmt.Sprintf("Sum Gear Ratio: %d\n\n", part2(m))
+	s += fmt.Sprintf("Sum Part Number: %d\n", m.part1())
+	s += fmt.Sprintf("Sum Gear Ratio: %d\n\n", m.part2())
+
+	return s
+}
+
+func (m schematic) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+
+	// Is it a key press?
+	case tea.KeyMsg:
+		// Cool, what was the actual key pressed?
+		switch msg.String() {
+
+		// These keys should exit the program.
+		case "ctrl+c", "q":
+			return m, tea.Quit
+		}
+	}
+
+	return m, nil
+}
+
+const (
+	NONE             = iota
+	VALID            = iota
+	GEAR_RANGE       = iota
+	PART_NUMBER      = iota
+	GEAR_PART_NUMBER = iota
+)
+
+func (m schematic) View() string {
 
 	// Send the UI for rendering
-	return s
+	return m.Print()
 }
 
 func initialModel(content string) schematic {
@@ -322,23 +343,6 @@ func check_num(num_str string, valid bool) int {
 	return 0
 }
 
-func part1(m schematic) int {
-	sum := 0
-	for _, pn := range m.part_numbers {
-		sum += pn.value
-	}
-	return sum
-}
-
-func part2(m schematic) int {
-	sum := 0
-	for _, g := range m.symbols {
-		ratio := g.ratio()
-		sum += ratio
-	}
-	return sum
-}
-
 func Run(test string) {
 	if len(test) > 0 {
 		test += "_"
@@ -363,7 +367,4 @@ func Run(test string) {
 		fmt.Printf("Alas, there's been an error: %v", err)
 		os.Exit(1)
 	}
-
-	//fmt.Printf("Part 1: %d\n", part1(&schema))
-	//fmt.Printf("Part 1: %d\n", part2(&schema))
 }
