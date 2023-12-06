@@ -8,6 +8,7 @@ import (
 	"github.com/delcaran/aoc2023/day1"
 	"github.com/delcaran/aoc2023/day2"
 	"github.com/delcaran/aoc2023/day3"
+	"github.com/delcaran/aoc2023/day4"
 )
 
 func main() {
@@ -38,6 +39,8 @@ func main() {
 		day2.Run(test)
 	case 3:
 		day3.Run(test)
+	case 4:
+		day4.Run(test)
 	default:
 		log.Fatal("Day not done")
 	}
