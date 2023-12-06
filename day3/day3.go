@@ -6,21 +6,25 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 	"unicode"
 
 	tea "github.com/charmbracelet/bubbletea"
 	color "github.com/fatih/color"
 )
 
-type gear_t struct {
-	col     int
-	row     int
-	numbers []*part_number_t
-	zone    [][]bool
+type symbol_t struct {
+	char         rune
+	col          int
+	row          int
+	part_numbers []*part_number_t
+	zone         [][]bool
 }
 
-func (g *gear_t) init(s model, row int, col int) {
+func (g *symbol_t) is_gear() bool {
+	return g.char == '*' && len(g.part_numbers) == 2
+}
+
+func (g *symbol_t) init(s *schematic, c rune, row int, col int) {
 	g.zone = make([][]bool, s.rows)
 	for i := range g.zone {
 		g.zone[i] = make([]bool, s.cols)
@@ -29,6 +33,7 @@ func (g *gear_t) init(s model, row int, col int) {
 		}
 	}
 
+	g.char = c
 	g.col = col
 	g.row = row
 
@@ -48,26 +53,22 @@ func (g *gear_t) init(s model, row int, col int) {
 	g.zone[down][right] = true
 }
 
-func (g *gear_t) ratio() int {
-	if len(g.numbers) != 2 {
-		return 0
+func (g *symbol_t) ratio() int {
+	if g.is_gear() {
+		prod := 1
+		for _, pn := range g.part_numbers {
+			prod = prod * pn.value
+		}
+		return prod
 	}
-	prod := 1
-	for _, pn := range g.numbers {
-		prod = prod * pn.value
-	}
-	return prod
+	return 0
 }
 
-func (g *gear_t) add_part_number(pn *part_number_t) bool {
-	if len(g.numbers) < 2 {
-		g.numbers = append(g.numbers, pn)
-		return true
-	}
-	return false
+func (g *symbol_t) add_part_number(pn *part_number_t) {
+	g.part_numbers = append(g.part_numbers, pn)
 }
 
-func (g *gear_t) pn_in_range(pn *part_number_t) bool {
+func (g *symbol_t) pn_in_range(pn *part_number_t) bool {
 	for r, row := range g.zone {
 		for c := range row {
 			if row[c] && pn.row == r && pn.begin <= c && c <= pn.end {
@@ -78,7 +79,7 @@ func (g *gear_t) pn_in_range(pn *part_number_t) bool {
 	return false
 }
 
-func (g *gear_t) in_range(nrow int, ncol int) bool {
+func (g *symbol_t) in_range(nrow int, ncol int) bool {
 	for r, row := range g.zone {
 		for c := range row {
 			if row[c] && nrow == r && ncol == c {
@@ -90,10 +91,11 @@ func (g *gear_t) in_range(nrow int, ncol int) bool {
 }
 
 type part_number_t struct {
-	value int
-	row   int
-	begin int
-	end   int
+	value  int
+	row    int
+	begin  int
+	end    int
+	lenght int
 }
 
 func (pn *part_number_t) in_range(nrow int, ncol int) bool {
@@ -105,53 +107,58 @@ func (pn *part_number_t) in_range(nrow int, ncol int) bool {
 	return false
 }
 
-type model struct {
+type schematic struct {
 	schema       []string
 	cols         int
 	rows         int
-	valid        [][]bool
-	gears        []gear_t
+	symbols      []symbol_t
 	part_numbers []part_number_t
-	refresh      int
 }
 
-func (m *model) find_symbols() {
+func (m *schematic) get_symbols_on_cell(row int, col int) []*symbol_t {
+	var symbols []*symbol_t = nil
+	for idx := range m.symbols {
+		s := &m.symbols[idx]
+		if s.in_range(row, col) {
+			symbols = append(symbols, s)
+		}
+	}
+	return symbols
+}
+
+func (m *schematic) get_symbols_on_part_number(pn *part_number_t) []*symbol_t {
+	var symbols []*symbol_t = nil
+	for idx := range m.symbols {
+		s := &m.symbols[idx]
+		for c := pn.begin; c <= pn.end; c++ {
+			if s.in_range(pn.row, c) {
+				symbols = append(symbols, s)
+			}
+		}
+	}
+	return symbols
+}
+
+func (m *schematic) find_symbols() {
 	for row, line := range m.schema {
 		for col, char := range line {
 			if !unicode.IsDigit(char) && char != '.' {
-				up := max(0, row-1)
-				down := min(m.rows-1, row+1)
-				left := max(0, col-1)
-				right := min(m.cols-1, col+1)
-				m.valid[up][left] = true
-				m.valid[up][col] = true
-				m.valid[up][right] = true
-				m.valid[row][left] = true
-				m.valid[row][col] = true
-				m.valid[row][right] = true
-				m.valid[down][left] = true
-				m.valid[down][col] = true
-				m.valid[down][right] = true
-
-				if char == '*' {
-					var new_g gear_t
-					new_g.init(*m, row, col)
-					m.gears = append(m.gears, new_g)
-				}
+				var s symbol_t
+				s.init(m, char, row, col)
+				m.symbols = append(m.symbols, s)
 			}
 		}
 	}
 }
 
-func (m *model) find_part_numbers() {
-	m.part_numbers = m.part_numbers[:0]
+func (m *schematic) find_part_numbers() {
 	for row, line := range m.schema {
 		tmp_num := []rune{}
 		valid := false
 		for col, char := range line {
 			if unicode.IsDigit(char) {
 				tmp_num = append(tmp_num, char)
-				if m.valid[row][col] {
+				if m.get_symbols_on_cell(row, col) != nil {
 					valid = true
 				}
 			} else {
@@ -160,6 +167,7 @@ func (m *model) find_part_numbers() {
 				pn.row = row
 				pn.end = col - 1
 				pn.begin = col - len(tmp_num)
+				pn.lenght = len(tmp_num)
 				pn.value = check_num(string(tmp_num), valid)
 				if pn.value != 0 {
 					m.part_numbers = append(m.part_numbers, pn)
@@ -178,86 +186,30 @@ func (m *model) find_part_numbers() {
 	}
 }
 
-func (m *model) filter_gears() {
-	var not_gears []int
-	for idx := range m.gears {
-		g := &m.gears[idx]
+func (m *schematic) filter_gears() {
+	for idx := range m.symbols {
+		g := &m.symbols[idx]
 		for pni := range m.part_numbers {
 			pn := &m.part_numbers[pni]
 			if g.pn_in_range(pn) {
-				if !g.add_part_number(pn) {
-					// linked to too many part numbers
-					not_gears = append(not_gears, idx)
-				}
+				g.add_part_number(pn)
 			}
 		}
 	}
-	// second pass: not enough part numbers
-	for idx, g := range m.gears {
-		if len(g.numbers) != 2 {
-			found := false
-			for _, x := range not_gears {
-				if x == idx {
-					found = true
-					break
-				}
-			}
-			if !found {
-				not_gears = append(not_gears, idx)
-			}
-		}
-	}
-	// third pass: removing not gears
-	for _, index := range not_gears {
-		if index+1 >= len(m.gears) {
-			m.gears = m.gears[:index]
-		} else {
-			m.gears = append(m.gears[:index], m.gears[index+1:]...)
-		}
-	}
 }
 
-type TickMsg time.Time
-
-func tickEvery() tea.Cmd {
-	return tea.Every(time.Millisecond*30, func(t time.Time) tea.Msg {
-		return TickMsg(t)
-	})
+func (m schematic) Init() tea.Cmd {
+	return nil
 }
 
-func (m model) Init() tea.Cmd {
-	return tickEvery()
-}
-
-func initialModel(content string) model {
-	var m model
-	m.schema = strings.Fields(strings.TrimSpace(content))
-	m.rows = len(m.schema)
-	m.cols = len(m.schema[0])
-	m.valid = make([][]bool, m.rows)
-	for i := range m.valid {
-		m.valid[i] = make([]bool, m.cols)
-		for j := range m.valid[i] {
-			m.valid[i][j] = false
-		}
-	}
-	return m
-}
-
-func (m *model) Run() {
-	m.refresh += 1
+func (m *schematic) Run() {
 	m.find_symbols()
 	m.find_part_numbers()
 	m.filter_gears()
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m schematic) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-
-	case TickMsg:
-		// Return your Every command again to loop.
-		m.Run()
-		return m, tickEvery()
 
 	// Is it a key press?
 	case tea.KeyMsg:
@@ -273,63 +225,61 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+const (
+	NONE             = iota
+	VALID            = iota
+	GEAR_RANGE       = iota
+	PART_NUMBER      = iota
+	GEAR_PART_NUMBER = iota
+)
+
+func (m schematic) View() string {
 	s := ""
 	for r, line := range m.schema {
 		for c, char := range line {
-			relevance := 0 // 0: none, 1: valid, 2:gear range, 3: pn, 4: gear pn
+			relevance := NONE
+
 			if unicode.IsDigit(char) {
-				in_gear_range := false
-				for _, g := range m.gears {
-					for _, pn := range g.numbers {
-						if pn.in_range(r, c) {
-							// this "cell" is from a part number owned by a gear
-							in_gear_range = true
-							break
+				for _, pn := range m.part_numbers {
+					if pn.in_range(r, c) {
+						relevance = PART_NUMBER
+						for _, sym := range m.get_symbols_on_part_number(&pn) {
+							if sym.is_gear() {
+								relevance = GEAR_PART_NUMBER
+								break
+							}
 						}
-					}
-					if in_gear_range {
 						break
-					}
-				}
-				if in_gear_range {
-					relevance = 4
-				} else {
-					for _, pn := range m.part_numbers {
-						if pn.in_range(r, c) {
-							// this "cell" is from a part number not owned by a gear
-							relevance = 3
-							break
-						}
+					} else {
+						relevance = NONE
 					}
 				}
 			} else {
-				in_gear_range := false
-				for _, g := range m.gears {
-					if g.in_range(r, c) {
-						in_gear_range = true
-						break
-					}
-				}
-				if in_gear_range {
-					relevance = 2
+				symbols := m.get_symbols_on_cell(r, c)
+				if symbols == nil {
+					relevance = NONE
 				} else {
-					if m.valid[r][c] {
-						relevance = 1
-					} else {
-						relevance = 0
+					for _, sym := range symbols {
+						if sym.is_gear() {
+							relevance = GEAR_RANGE
+						} else {
+							relevance = VALID
+						}
+						break
 					}
 				}
 			}
 
 			switch relevance {
-			case 1:
+			case NONE:
+				s += fmt.Sprintf("%c", char)
+			case VALID:
 				s += color.BlueString("%c", char)
-			case 2:
+			case GEAR_RANGE:
 				s += color.YellowString("%c", char)
-			case 3:
+			case PART_NUMBER:
 				s += color.GreenString("%c", char)
-			case 4:
+			case GEAR_PART_NUMBER:
 				s += color.RedString("%c", char)
 			default:
 				s += fmt.Sprintf("%c", char)
@@ -338,12 +288,20 @@ func (m model) View() string {
 		s += "\n"
 	}
 	s += "\n"
-	s += fmt.Sprintf("Refresh: %d\n", m.refresh)
 	s += fmt.Sprintf("Sum Part Number: %d\n", part1(m))
 	s += fmt.Sprintf("Sum Gear Ratio: %d\n\n", part2(m))
 
 	// Send the UI for rendering
 	return s
+}
+
+func initialModel(content string) schematic {
+	var m schematic
+	m.schema = strings.Fields(strings.TrimSpace(content))
+	m.rows = len(m.schema)
+	m.cols = len(m.schema[0])
+	m.Run()
+	return m
 }
 
 func check_num(num_str string, valid bool) int {
@@ -364,7 +322,7 @@ func check_num(num_str string, valid bool) int {
 	return 0
 }
 
-func part1(m model) int {
+func part1(m schematic) int {
 	sum := 0
 	for _, pn := range m.part_numbers {
 		sum += pn.value
@@ -372,9 +330,9 @@ func part1(m model) int {
 	return sum
 }
 
-func part2(m model) int {
+func part2(m schematic) int {
 	sum := 0
-	for _, g := range m.gears {
+	for _, g := range m.symbols {
 		ratio := g.ratio()
 		sum += ratio
 	}
