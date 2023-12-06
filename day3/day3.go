@@ -178,6 +178,10 @@ func (m *schematic) find_part_numbers() {
 		}
 		// check right border numbers
 		var pn part_number_t
+		pn.row = row
+		pn.end = m.cols - 1
+		pn.begin = m.cols - len(tmp_num)
+		pn.lenght = len(tmp_num)
 		pn.value = check_num(string(tmp_num), valid)
 		if pn.value != 0 {
 			m.part_numbers = append(m.part_numbers, pn)
