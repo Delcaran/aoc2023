@@ -2,6 +2,7 @@ package main
 
 import (
 	_ "embed"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
@@ -37,13 +38,13 @@ func main() {
 
 	switch day {
 	case 1:
-		log.Println(day1.Run(day1_input))
+		fmt.Println(day1.Run(day1_input))
 	case 2:
-		log.Println(day2.Run(day2_input))
+		fmt.Println(day2.Run(day2_input))
 	case 3:
-		log.Println(day3.Run(day3_input))
+		fmt.Println(day3.Run(day3_input))
 	case 4:
-		log.Println(day4.Run(day4_input))
+		fmt.Println(day4.Run(day4_input))
 	default:
 		log.Fatal("Day not done")
 	}
