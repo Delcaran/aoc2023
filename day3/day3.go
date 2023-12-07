@@ -3,13 +3,11 @@ package day3
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"strings"
 	"unicode"
 
-	tea "github.com/charmbracelet/bubbletea"
-	color "github.com/fatih/color"
+	"github.com/fatih/color"
 )
 
 type symbol_t struct {
@@ -202,11 +200,7 @@ func (m *schematic) filter_gears() {
 	}
 }
 
-func (m schematic) Init() tea.Cmd {
-	return nil
-}
-
-func (m *schematic) Run() {
+func (m *schematic) run() {
 	m.find_symbols()
 	m.find_part_numbers()
 	m.filter_gears()
@@ -229,7 +223,21 @@ func (m *schematic) part2() int {
 	return sum
 }
 
-func (m *schematic) Print() string {
+func (m *schematic) init(content string) {
+	m.schema = strings.Fields(strings.TrimSpace(content))
+	m.rows = len(m.schema)
+	m.cols = len(m.schema[0])
+}
+
+const (
+	NONE             = iota
+	VALID            = iota
+	GEAR_RANGE       = iota
+	PART_NUMBER      = iota
+	GEAR_PART_NUMBER = iota
+)
+
+func (m *schematic) print() string {
 	s := ""
 	for r, line := range m.schema {
 		for c, char := range line {
@@ -289,86 +297,26 @@ func (m *schematic) Print() string {
 	return s
 }
 
-func (m schematic) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	switch msg := msg.(type) {
-
-	// Is it a key press?
-	case tea.KeyMsg:
-		// Cool, what was the actual key pressed?
-		switch msg.String() {
-
-		// These keys should exit the program.
-		case "ctrl+c", "q":
-			return m, tea.Quit
-		}
-	}
-
-	return m, nil
-}
-
-const (
-	NONE             = iota
-	VALID            = iota
-	GEAR_RANGE       = iota
-	PART_NUMBER      = iota
-	GEAR_PART_NUMBER = iota
-)
-
-func (m schematic) View() string {
-
-	// Send the UI for rendering
-	return m.Print()
-}
-
-func initialModel(content string) schematic {
-	var m schematic
-	m.schema = strings.Fields(strings.TrimSpace(content))
-	m.rows = len(m.schema)
-	m.cols = len(m.schema[0])
-	m.Run()
-	return m
-}
-
 func check_num(num_str string, valid bool) int {
 	if len(num_str) > 0 {
-		//fmt.Printf("%s ", num_str)
 		if valid {
 			num, err := strconv.Atoi(num_str)
 			if err != nil {
 				log.Fatal(err)
 			}
-			//fmt.Printf("part number\n")
 			return num
 		} else {
-			//fmt.Printf("not a part number\n")
 			return 0
 		}
 	}
 	return 0
 }
 
-func Run(test string) {
-	if len(test) > 0 {
-		test += "_"
-	}
-	buffer, err := os.ReadFile("day3/" + test + "input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
+func Run(content string) (int, int, error) {
+	var m schematic
+	m.init(content)
+	m.run()
+	m.print()
 
-	if len(os.Getenv("DEBUG")) > 0 {
-		f, err := tea.LogToFile("debug.log", "debug")
-		if err != nil {
-			fmt.Println("fatal:", err)
-			os.Exit(1)
-		}
-		defer f.Close()
-	}
-
-	content := string(buffer[:])
-	p := tea.NewProgram(initialModel(content))
-	if _, err := p.Run(); err != nil {
-		fmt.Printf("Alas, there's been an error: %v", err)
-		os.Exit(1)
-	}
+	return m.part1(), m.part2(), nil
 }

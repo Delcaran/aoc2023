@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "embed"
 	"log"
 	"os"
 	"strconv"
@@ -11,8 +12,19 @@ import (
 	"github.com/delcaran/aoc2023/day4"
 )
 
+//go:embed day1/input.txt
+var day1_input string
+
+//go:embed day2/input.txt
+var day2_input string
+
+//go:embed day3/input.txt
+var day3_input string
+
+//go:embed day4/input.txt
+var day4_input string
+
 func main() {
-	test := ""
 	day := 0
 	var err error
 	switch len(os.Args[1:]) {
@@ -21,26 +33,17 @@ func main() {
 		if err != nil {
 			log.Fatal("Wrong day...")
 		}
-	case 2:
-		day, err = strconv.Atoi(os.Args[1])
-		if err != nil {
-			log.Fatal("Wrong day...")
-		}
-		test = os.Args[2]
-	default:
-		day = 3
-		test = "test"
 	}
 
 	switch day {
 	case 1:
-		day1.Run(test)
+		log.Println(day1.Run(day1_input))
 	case 2:
-		day2.Run(test)
+		log.Println(day2.Run(day2_input))
 	case 3:
-		day3.Run(test)
+		log.Println(day3.Run(day3_input))
 	case 4:
-		day4.Run(test)
+		log.Println(day4.Run(day4_input))
 	default:
 		log.Fatal("Day not done")
 	}

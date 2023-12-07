@@ -2,7 +2,6 @@ package day2
 
 import (
 	"log"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -146,16 +145,6 @@ func part2(content string) int {
 	return sum
 }
 
-func Run(test string) {
-	if len(test) > 0 {
-		test += "_"
-	}
-	buffer, err := os.ReadFile("day2/" + test + "input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	content := string(buffer[:])
-	log.Printf("Part 1: %d\n", part1(content))
-	log.Printf("Part 2: %d\n", part2(content))
+func Run(content string) (int, int, error) {
+	return part1(content), part2(content), nil
 }

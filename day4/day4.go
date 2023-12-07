@@ -3,7 +3,6 @@ package day4
 import (
 	"log"
 	"math"
-	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -13,15 +12,22 @@ type card struct {
 	id      int
 	winning []string
 	numbers []string
-	winners []string
+	winners int
 }
 
 func (c *card) find_winners() {
+	c.winners = 0
 	for _, w := range c.winning {
+		found := false
 		for _, n := range c.numbers {
 			if n == w {
-				c.winners = append(c.winners, w)
+				c.winners += 1
+				found = true
+				break
 			}
+		}
+		if found {
+			continue
 		}
 	}
 }
@@ -29,10 +35,9 @@ func (c *card) find_winners() {
 func (c *card) points() int {
 	c.find_winners()
 	points := 0
-	if len(c.winners) > 0 {
-		points = int(math.Pow(float64(2), float64(len(c.winners)-1)))
+	if c.winners > 0 {
+		points = int(math.Pow(float64(2), float64(c.winners-1)))
 	}
-	//log.Printf("%+v -> %d\n", c, points)
 	return points
 }
 
@@ -67,16 +72,8 @@ func (l *lottery) points() int {
 	return sum
 }
 
-func Run(test string) {
-	if len(test) > 0 {
-		test += "_"
-	}
-	buffer, err := os.ReadFile("day4/" + test + "input.txt")
-	if err != nil {
-		log.Fatal(err)
-	}
-	content := string(buffer[:])
+func Run(content string) (int, int, error) {
 	var l lottery
 	l.init(content)
-	log.Println(l.points())
+	return l.points(), 0, nil
 }
