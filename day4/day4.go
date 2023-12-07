@@ -109,16 +109,16 @@ func (l *lottery) play() int {
 	l.played = 0
 	for l.current != nil {
 		c := l.current
-		log.Printf("Playing card %d copy %d", c.id, c.copy)
+		//log.Printf("Playing card %d copy %d", c.id, c.copy)
 		// adding newly won cards
 		for count := 1; count <= c.winners; count++ {
 			id := c.id + count
-			log.Printf("\tCard %d copy %d won copy of card %d", c.id, c.copy, id)
+			//log.Printf("\tCard %d copy %d won copy of card %d", c.id, c.copy, id)
 			old_card := &l.cards[id][len(l.cards[id])-1]
 			l.cards[id] = append(l.cards[id], old_card.make_copy())
 			old_card.set_next(&l.cards[id][len(l.cards[id])-1])
 		}
-		log.Printf("Played card %d copy %d", c.id, c.copy)
+		//log.Printf("Played card %d copy %d", c.id, c.copy)
 		l.played += 1
 		l.current = c.next
 	}
