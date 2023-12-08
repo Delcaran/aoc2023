@@ -3,6 +3,7 @@ package day5
 import (
 	"fmt"
 	"log"
+	"math"
 	"regexp"
 	"strconv"
 	"strings"
@@ -152,12 +153,15 @@ func part1(a *almanac) int {
 	return lowest_location
 }
 
-func (a *almanac) find_lowest_in_chunk(ch chan<- int, seed int, last_seed int) {
+func (a *almanac) find_lowest_in_seed_group(ch chan<- int, index int, seed int, last_seed int) {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	const seed_limit = 1000000
+	pretty_index := int(math.Round(float64(index)/2)) + 1
+	chunks := 1 + (last_seed-seed)/seed_limit
+	count := 1
 	for seed < last_seed {
 		limit := min(seed+seed_limit, last_seed)
-		fmt.Printf("From %d to %d\n", seed, limit)
+		fmt.Printf("%d : %d/%d : %d -> %d\n", pretty_index, count, chunks, seed, limit)
 		var seed_portion []int
 		for ; seed < limit; seed++ {
 			seed_portion = append(seed_portion, seed)
@@ -165,6 +169,7 @@ func (a *almanac) find_lowest_in_chunk(ch chan<- int, seed int, last_seed int) {
 		for _, x := range a.decode("location", seed_portion) {
 			lowest_location = min(lowest_location, x)
 		}
+		count += 1
 	}
 	ch <- lowest_location
 }
@@ -181,7 +186,7 @@ func part2(a *almanac) int {
 
 		lowestchan := make(chan int)
 		lowestchans = append(lowestchans, lowestchan)
-		go a.find_lowest_in_chunk(lowestchan, seed, last_seed)
+		go a.find_lowest_in_seed_group(lowestchan, index, seed, last_seed)
 		index += 2
 	}
 
