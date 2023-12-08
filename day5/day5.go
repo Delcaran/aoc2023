@@ -48,9 +48,9 @@ func (m *generic_map) convert(input []int) ([]int, string) {
 }
 
 type almanac struct {
-	seeds    []int
-	seed_idx int
-	maps     map[string]generic_map // src_type as key
+	seeds         []int
+	seed_list_idx int
+	maps          map[string]generic_map // src_type as key
 }
 
 func initialize(content string) almanac {
@@ -58,7 +58,7 @@ func initialize(content string) almanac {
 	regex_seeds := regexp.MustCompile(`seeds:\s(?P<seeds>.*)`)
 	regex_header := regexp.MustCompile(`(?P<src>\w+)-to-(?P<dest>\w+)\smap:`)
 	a.maps = make(map[string]generic_map)
-	a.seed_idx = 0
+	a.seed_list_idx = 0
 	var current_map generic_map
 	for _, line := range strings.Split(content, "\n") {
 		// looking for seeds (once)
@@ -128,19 +128,6 @@ func initialize(content string) almanac {
 	return a
 }
 
-func (a *almanac) get_seeds(with_range bool) []int {
-	if with_range {
-		data := make([]int, 0)
-		for count := 0; count < a.seeds[a.seed_idx+1]; count++ {
-			data = append(data, a.seeds[a.seed_idx]+count)
-		}
-		a.seed_idx += 2
-		return data
-	} else {
-		return a.seeds
-	}
-}
-
 func (a *almanac) decode(destination string, data []int) []int {
 	ok := true
 	for src := "seed"; ok; {
@@ -158,7 +145,7 @@ func (a *almanac) decode(destination string, data []int) []int {
 }
 
 func part1(a *almanac) int {
-	data := a.get_seeds(false)
+	data := a.seeds
 	locations := a.decode("location", data)
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	for _, x := range locations {
@@ -169,19 +156,23 @@ func part1(a *almanac) int {
 
 func part2(a *almanac) int {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	var data []int
-	for a.seed_idx < len(a.seeds)-2 {
-		data = a.get_seeds(true)
-		for len(data) > 100 {
-			portion := data[:100]
-			data = data[:100]
-			for _, x := range a.decode("location", portion) {
+	for a.seed_list_idx < len(a.seeds)-2 {
+		log.Printf("a.seed_idx %d\n", a.seed_list_idx)
+		first_seed := a.seeds[a.seed_list_idx]
+		seed := first_seed
+		seeds_count := a.seeds[a.seed_list_idx+1]
+		last_seed := first_seed + seeds_count
+		const seed_limit = 100
+		for seed < last_seed {
+			var seed_portion []int
+			for ; seed < min(seed+seed_limit, last_seed); seed++ {
+				seed_portion = append(seed_portion, seed)
+			}
+			for _, x := range a.decode("location", seed_portion) {
 				lowest_location = min(lowest_location, x)
 			}
 		}
-		for _, x := range a.decode("location", data) {
-			lowest_location = min(lowest_location, x)
-		}
+		a.seed_list_idx += 2
 	}
 	return lowest_location
 }
