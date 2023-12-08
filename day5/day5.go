@@ -128,16 +128,16 @@ func initialize(content string) almanac {
 	return a
 }
 
-func (a *almanac) get_seeds(with_range bool) ([]int, bool) {
-	if with_range && a.seed_idx < len(a.seeds)-2 {
+func (a *almanac) get_seeds(with_range bool) []int {
+	if with_range {
 		data := make([]int, 0)
 		for count := 0; count < a.seeds[a.seed_idx+1]; count++ {
 			data = append(data, a.seeds[a.seed_idx]+count)
 		}
 		a.seed_idx += 2
-		return data, a.seed_idx < len(a.seeds)-2
+		return data
 	} else {
-		return a.seeds, false
+		return a.seeds
 	}
 }
 
@@ -158,7 +158,7 @@ func (a *almanac) decode(destination string, data []int) []int {
 }
 
 func part1(a *almanac) int {
-	data, _ := a.get_seeds(false)
+	data := a.get_seeds(false)
 	locations := a.decode("location", data)
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	for _, x := range locations {
@@ -170,11 +170,16 @@ func part1(a *almanac) int {
 func part2(a *almanac) int {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	var data []int
-	has_more := len(a.seeds) >= 2
-	for has_more {
-		data, has_more = a.get_seeds(true)
-		locations := a.decode("location", data)
-		for _, x := range locations {
+	for a.seed_idx < len(a.seeds)-2 {
+		data = a.get_seeds(true)
+		for len(data) > 100 {
+			portion := data[:100]
+			data = data[:100]
+			for _, x := range a.decode("location", portion) {
+				lowest_location = min(lowest_location, x)
+			}
+		}
+		for _, x := range a.decode("location", data) {
 			lowest_location = min(lowest_location, x)
 		}
 	}
