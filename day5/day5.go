@@ -157,15 +157,16 @@ func part1(a *almanac) int {
 func part2(a *almanac) int {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	for a.seed_list_idx < len(a.seeds)-2 {
-		log.Printf("a.seed_idx %d\n", a.seed_list_idx)
 		first_seed := a.seeds[a.seed_list_idx]
 		seed := first_seed
 		seeds_count := a.seeds[a.seed_list_idx+1]
 		last_seed := first_seed + seeds_count
-		const seed_limit = 100
+		const seed_limit = 10000
 		for seed < last_seed {
+			limit := min(seed+seed_limit, last_seed)
+			log.Printf("idx %d , seeds %d - %d\n", a.seed_list_idx, seed, limit)
 			var seed_portion []int
-			for ; seed < min(seed+seed_limit, last_seed); seed++ {
+			for ; seed < limit; seed++ {
 				seed_portion = append(seed_portion, seed)
 			}
 			for _, x := range a.decode("location", seed_portion) {
