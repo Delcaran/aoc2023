@@ -48,8 +48,9 @@ func (m *generic_map) convert(input []int) ([]int, string) {
 }
 
 type almanac struct {
-	seeds []int
-	maps  map[string]generic_map // src_type as key
+	seeds    []int
+	seed_idx int
+	maps     map[string]generic_map // src_type as key
 }
 
 func initialize(content string) almanac {
@@ -57,6 +58,7 @@ func initialize(content string) almanac {
 	regex_seeds := regexp.MustCompile(`seeds:\s(?P<seeds>.*)`)
 	regex_header := regexp.MustCompile(`(?P<src>\w+)-to-(?P<dest>\w+)\smap:`)
 	a.maps = make(map[string]generic_map)
+	a.seed_idx = 0
 	var current_map generic_map
 	for _, line := range strings.Split(content, "\n") {
 		// looking for seeds (once)
@@ -126,28 +128,20 @@ func initialize(content string) almanac {
 	return a
 }
 
-func (a *almanac) decode(destination string, part2 bool) []int {
-	data := a.seeds
-	if part2 {
-		data = make([]int, 0)
-		seed_begin := 0
-		data_size := 0
-		for idx := 0; idx < len(a.seeds); idx++ {
-			if idx == 0 || idx%2 == 0 {
-				seed_begin = a.seeds[idx]
-			} else {
-				data_size = a.seeds[idx]
-			}
-			if seed_begin > 0 && data_size > 0 {
-				for count := 0; count < data_size; count++ {
-					data = append(data, seed_begin+count)
-				}
-				seed_begin = 0
-				data_size = 0
-			}
+func (a *almanac) get_seeds(with_range bool) ([]int, bool) {
+	if with_range && a.seed_idx < len(a.seeds)-2 {
+		data := make([]int, 0)
+		for count := 0; count < a.seeds[a.seed_idx+1]; count++ {
+			data = append(data, a.seeds[a.seed_idx]+count)
 		}
+		a.seed_idx += 2
+		return data, a.seed_idx < len(a.seeds)-2
+	} else {
+		return a.seeds, false
 	}
+}
 
+func (a *almanac) decode(destination string, data []int) []int {
 	ok := true
 	for src := "seed"; ok; {
 		m, have_map := a.maps[src]
@@ -164,7 +158,8 @@ func (a *almanac) decode(destination string, part2 bool) []int {
 }
 
 func part1(a *almanac) int {
-	locations := a.decode("location", false)
+	data, _ := a.get_seeds(false)
+	locations := a.decode("location", data)
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	for _, x := range locations {
 		lowest_location = min(lowest_location, x)
@@ -173,10 +168,15 @@ func part1(a *almanac) int {
 }
 
 func part2(a *almanac) int {
-	locations := a.decode("location", true)
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	for _, x := range locations {
-		lowest_location = min(lowest_location, x)
+	var data []int
+	has_more := len(a.seeds) >= 2
+	for has_more {
+		data, has_more = a.get_seeds(true)
+		locations := a.decode("location", data)
+		for _, x := range locations {
+			lowest_location = min(lowest_location, x)
+		}
 	}
 	return lowest_location
 }
