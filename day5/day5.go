@@ -126,8 +126,27 @@ func initialize(content string) almanac {
 	return a
 }
 
-func (a *almanac) decode(destination string) []int {
+func (a *almanac) decode(destination string, part2 bool) []int {
 	data := a.seeds
+	if part2 {
+		data = make([]int, 0)
+		seed_begin := 0
+		data_size := 0
+		for idx := 0; idx < len(a.seeds); idx++ {
+			if idx == 0 || idx%2 == 0 {
+				seed_begin = a.seeds[idx]
+			} else {
+				data_size = a.seeds[idx]
+			}
+			if seed_begin > 0 && data_size > 0 {
+				for count := 0; count < data_size; count++ {
+					data = append(data, seed_begin+count)
+				}
+				seed_begin = 0
+				data_size = 0
+			}
+		}
+	}
 
 	ok := true
 	for src := "seed"; ok; {
@@ -145,7 +164,16 @@ func (a *almanac) decode(destination string) []int {
 }
 
 func part1(a *almanac) int {
-	locations := a.decode("location")
+	locations := a.decode("location", false)
+	lowest_location := int(^uint(0) >> 1) // initialized at max int
+	for _, x := range locations {
+		lowest_location = min(lowest_location, x)
+	}
+	return lowest_location
+}
+
+func part2(a *almanac) int {
+	locations := a.decode("location", true)
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
 	for _, x := range locations {
 		lowest_location = min(lowest_location, x)
@@ -156,5 +184,5 @@ func part1(a *almanac) int {
 func Run(content string) (int, int, error) {
 	almanac := initialize(content)
 
-	return part1(&almanac), 0, nil
+	return part1(&almanac), part2(&almanac), nil
 }
