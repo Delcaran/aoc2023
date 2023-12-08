@@ -1,33 +1,48 @@
 package day5
 
 import (
+	"fmt"
 	"log"
 	"regexp"
 	"strconv"
 	"strings"
 )
 
+type map_entry struct {
+	src        int
+	dest       int
+	data_range int
+}
+
+func (m *map_entry) convert(input int) (int, error) {
+	if input >= m.src && input < m.src+m.data_range {
+		offset := input - m.src
+		return m.dest + offset, nil
+	}
+	return 0, fmt.Errorf("out of range")
+}
+
 type generic_map struct {
 	src_type  string
 	dest_type string
-	mapping   map[int]int
-}
-
-func (m *generic_map) init(src string, dest string) {
-	m.src_type = src
-	m.dest_type = dest
-	m.mapping = make(map[int]int)
+	mapping   []map_entry
 }
 
 func (m *generic_map) convert(input []int) ([]int, string) {
 	var output []int
-	for i := range input {
-		in := input[i]
-		out, ok := m.mapping[in]
-		if !ok {
-			out = in
+	for _, in := range input {
+		found := false
+		for _, m := range m.mapping {
+			out, err := m.convert(in)
+			if err == nil {
+				output = append(output, out)
+				found = true
+				break
+			}
 		}
-		output = append(output, out)
+		if !found {
+			output = append(output, in)
+		}
 	}
 	return output, m.dest_type
 }
@@ -73,7 +88,9 @@ func initialize(content string) almanac {
 						result[name] = match[i]
 					}
 				}
-				current_map.init(result["src"], result["dest"])
+				current_map.src_type = result["src"]
+				current_map.dest_type = result["dest"]
+				current_map.mapping = make([]map_entry, 0)
 			}
 		} else {
 			// parsing map
@@ -91,9 +108,8 @@ func initialize(content string) almanac {
 				if err != nil {
 					log.Fatalln(err)
 				}
-				for i := 0; i < count; i++ {
-					current_map.mapping[src_begin+i] = dest_begin + i
-				}
+				current_map.mapping = append(current_map.mapping,
+					map_entry{src: src_begin, dest: dest_begin, data_range: count})
 			} else {
 				// finisced map
 				a.maps[current_map.src_type] = current_map
