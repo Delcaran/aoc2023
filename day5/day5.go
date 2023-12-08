@@ -48,9 +48,8 @@ func (m *generic_map) convert(input []int) ([]int, string) {
 }
 
 type almanac struct {
-	seeds         []int
-	seed_list_idx int
-	maps          map[string]generic_map // src_type as key
+	seeds []int
+	maps  map[string]generic_map // src_type as key
 }
 
 func initialize(content string) almanac {
@@ -58,7 +57,6 @@ func initialize(content string) almanac {
 	regex_seeds := regexp.MustCompile(`seeds:\s(?P<seeds>.*)`)
 	regex_header := regexp.MustCompile(`(?P<src>\w+)-to-(?P<dest>\w+)\smap:`)
 	a.maps = make(map[string]generic_map)
-	a.seed_list_idx = 0
 	var current_map generic_map
 	for _, line := range strings.Split(content, "\n") {
 		// looking for seeds (once)
@@ -154,26 +152,42 @@ func part1(a *almanac) int {
 	return lowest_location
 }
 
-func part2(a *almanac) int {
+func (a *almanac) find_lowest_in_chunk(ch chan<- int, seed int, last_seed int) {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	for a.seed_list_idx < len(a.seeds)-2 {
-		first_seed := a.seeds[a.seed_list_idx]
-		seed := first_seed
-		seeds_count := a.seeds[a.seed_list_idx+1]
-		last_seed := first_seed + seeds_count
-		const seed_limit = 1000000
-		for seed < last_seed {
-			limit := min(seed+seed_limit, last_seed)
-			log.Printf("%d/%d: %d - %d / %d\n", a.seed_list_idx, len(a.seeds), seed, limit, last_seed)
-			var seed_portion []int
-			for ; seed < limit; seed++ {
-				seed_portion = append(seed_portion, seed)
-			}
-			for _, x := range a.decode("location", seed_portion) {
-				lowest_location = min(lowest_location, x)
-			}
+	const seed_limit = 1000000
+	for seed < last_seed {
+		limit := min(seed+seed_limit, last_seed)
+		fmt.Printf("From %d to %d\n", seed, limit)
+		var seed_portion []int
+		for ; seed < limit; seed++ {
+			seed_portion = append(seed_portion, seed)
 		}
-		a.seed_list_idx += 2
+		for _, x := range a.decode("location", seed_portion) {
+			lowest_location = min(lowest_location, x)
+		}
+	}
+	ch <- lowest_location
+}
+
+func part2(a *almanac) int {
+	var lowestchans []chan int
+	index := 0
+
+	for index+1 < len(a.seeds) {
+		first_seed := a.seeds[index]
+		seed := first_seed
+		seeds_count := a.seeds[index+1]
+		last_seed := first_seed + seeds_count
+
+		lowestchan := make(chan int)
+		lowestchans = append(lowestchans, lowestchan)
+		go a.find_lowest_in_chunk(lowestchan, seed, last_seed)
+		index += 2
+	}
+
+	lowest_location := int(^uint(0) >> 1) // initialized at max int
+	for _, low := range lowestchans {
+		lowest_location = min(lowest_location, <-low)
 	}
 	return lowest_location
 }
