@@ -161,10 +161,10 @@ func part2(a *almanac) int {
 		seed := first_seed
 		seeds_count := a.seeds[a.seed_list_idx+1]
 		last_seed := first_seed + seeds_count
-		const seed_limit = 10000
+		const seed_limit = 1000000
 		for seed < last_seed {
 			limit := min(seed+seed_limit, last_seed)
-			log.Printf("idx %d , seeds %d - %d\n", a.seed_list_idx, seed, limit)
+			log.Printf("%d/%d: %d - %d / %d\n", a.seed_list_idx, len(a.seeds), seed, limit, last_seed)
 			var seed_portion []int
 			for ; seed < limit; seed++ {
 				seed_portion = append(seed_portion, seed)
