@@ -1,5 +1,7 @@
 package day5
 
+// go.dev/blog/pipelines
+
 import (
 	"fmt"
 	"log"
@@ -8,6 +10,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 type map_entry struct {
@@ -154,54 +157,93 @@ func part1(a *almanac) int {
 	return lowest_location
 }
 
-func (a *almanac) find_lowest_in_chunk(ch chan<- int, chunk []int, logstr string) {
-	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	log.Printf("%s", logstr)
-	for _, x := range a.decode("location", chunk) {
-		lowest_location = min(lowest_location, x)
+func chunk_gen(seeds []int) <-chan []int {
+	out := make(chan []int)
+
+	go func() {
+		const chunk_size = 1000000
+		blocks := len(seeds) / 2
+		index := 0
+		for index+1 < len(seeds) {
+			current_seed := seeds[index]
+			seeds_left := seeds[index+1]
+			chunk_num := 0
+			chunks := seeds_left/chunk_size + 1
+			for seeds_left > 0 {
+				limit := min(chunk_size, seeds_left)
+				seeds_left -= limit
+				chunk := make([]int, 0)
+				for count := 0; count < limit; count++ {
+					chunk = append(chunk, current_seed)
+					current_seed += 1
+				}
+				chunk_num += 1
+				block := int(math.Round((float64(index + 1)) / 2))
+				fmt.Printf("%d/%d : %d/%d : %d -> %d\n", block, blocks, chunk_num, chunks, chunk[0], chunk[len(chunk)-1])
+				out <- chunk // blocks if out channel is full
+			}
+			index += 2
+		}
+		close(out)
+	}()
+	return out
+}
+
+func parse_chunk(input <-chan []int, a *almanac) <-chan int {
+	lowest := int(^uint(0) >> 1) // initialized at max int
+	out := make(chan int)
+	go func() {
+		for chunk := range input {
+			for _, x := range a.decode("location", chunk) {
+				lowest = min(lowest, x)
+			}
+			out <- lowest
+		}
+		close(out)
+	}()
+	return out
+}
+
+func merge(channels ...<-chan int) <-chan int {
+	var wg sync.WaitGroup
+	out := make(chan int)
+
+	// start output goroutine for each input channel
+	// copies values from c to out until c is closed
+	output := func(c <-chan int) {
+		for n := range c {
+			out <- n
+		}
+		wg.Done()
 	}
-	ch <- lowest_location
+	wg.Add(len(channels))
+	for _, c := range channels {
+		go output(c)
+	}
+
+	// start goroutine to close out once all the output goroutines are done
+	// must start after Add call
+	go func() {
+		wg.Wait()
+		close(out)
+	}()
+	return out
 }
 
 func part2(a *almanac) int {
-	var lowestchans []chan int
-	guard := make(chan struct{}, runtime.NumCPU())
-	const chunk_size = 1000000
-	blocks := len(a.seeds) / 2
-	index := 0
+	outs := make([]<-chan int, 0)
+	input := chunk_gen(a.seeds)
 
-	for index+1 < len(a.seeds) {
-		current_seed := a.seeds[index]
-		seeds_left := a.seeds[index+1]
-		chunk_num := 0
-		chunks := seeds_left/chunk_size + 1
-		for seeds_left > 0 {
-			limit := min(chunk_size, seeds_left)
-			seeds_left -= limit
-			chunk := make([]int, 0)
-			for count := 0; count < limit; count++ {
-				chunk = append(chunk, current_seed)
-				current_seed += 1
-			}
-			chunk_num += 1
-			guard <- struct{}{} // would block if guard channel already filled .. but it crashes!
-			block := int(math.Round((float64(index + 1)) / 2))
-			s := fmt.Sprintf("%d/%d : %d/%d : %d -> %d\n", block, blocks, chunk_num, chunks, chunk[0], chunk[len(chunk)-1])
-			ch := make(chan int)
-			lowestchans = append(lowestchans, ch)
-			go func(ch chan<- int, chunk []int, logstr string) {
-				a.find_lowest_in_chunk(ch, chunk, s)
-				<-guard
-			}(ch, chunk, s)
-		}
-		index += 2
+	for x := 0; x < runtime.NumCPU(); x++ {
+		outs = append(outs, parse_chunk(input, a))
 	}
 
-	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	for _, low := range lowestchans {
-		lowest_location = min(lowest_location, <-low)
+	lowest := int(^uint(0) >> 1) // initialized at max int
+	for n := range merge(outs...) {
+		lowest = min(lowest, n)
 	}
-	return lowest_location
+
+	return lowest
 }
 
 func Run(content string) (int, int, error) {
