@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -153,40 +154,46 @@ func part1(a *almanac) int {
 	return lowest_location
 }
 
-func (a *almanac) find_lowest_in_seed_group(ch chan<- int, index int, seed int, last_seed int) {
+func (a *almanac) find_lowest_in_chunk(ch chan<- int, chunk []int, logstr string) {
 	lowest_location := int(^uint(0) >> 1) // initialized at max int
-	const seed_limit = 1000000
-	pretty_index := int(math.Round(float64(index)/2)) + 1
-	chunks := 1 + (last_seed-seed)/seed_limit
-	count := 1
-	for seed < last_seed {
-		limit := min(seed+seed_limit, last_seed)
-		fmt.Printf("%d : %d/%d : %d -> %d\n", pretty_index, count, chunks, seed, limit)
-		var seed_portion []int
-		for ; seed < limit; seed++ {
-			seed_portion = append(seed_portion, seed)
-		}
-		for _, x := range a.decode("location", seed_portion) {
-			lowest_location = min(lowest_location, x)
-		}
-		count += 1
+	log.Printf("%s", logstr)
+	for _, x := range a.decode("location", chunk) {
+		lowest_location = min(lowest_location, x)
 	}
 	ch <- lowest_location
 }
 
 func part2(a *almanac) int {
 	var lowestchans []chan int
+	guard := make(chan struct{}, runtime.NumCPU())
+	const chunk_size = 1000000
+	blocks := len(a.seeds) / 2
 	index := 0
 
 	for index+1 < len(a.seeds) {
-		first_seed := a.seeds[index]
-		seed := first_seed
-		seeds_count := a.seeds[index+1]
-		last_seed := first_seed + seeds_count
-
-		lowestchan := make(chan int)
-		lowestchans = append(lowestchans, lowestchan)
-		go a.find_lowest_in_seed_group(lowestchan, index, seed, last_seed)
+		current_seed := a.seeds[index]
+		seeds_left := a.seeds[index+1]
+		chunk_num := 0
+		chunks := seeds_left/chunk_size + 1
+		for seeds_left > 0 {
+			limit := min(chunk_size, seeds_left)
+			seeds_left -= limit
+			chunk := make([]int, 0)
+			for count := 0; count < limit; count++ {
+				chunk = append(chunk, current_seed)
+				current_seed += 1
+			}
+			chunk_num += 1
+			guard <- struct{}{} // would block if guard channel already filled .. but it crashes!
+			block := int(math.Round((float64(index + 1)) / 2))
+			s := fmt.Sprintf("%d/%d : %d/%d : %d -> %d\n", block, blocks, chunk_num, chunks, chunk[0], chunk[len(chunk)-1])
+			ch := make(chan int)
+			lowestchans = append(lowestchans, ch)
+			go func(ch chan<- int, chunk []int, logstr string) {
+				a.find_lowest_in_chunk(ch, chunk, s)
+				<-guard
+			}(ch, chunk, s)
+		}
 		index += 2
 	}
 
