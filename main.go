@@ -12,6 +12,7 @@ import (
 	"github.com/delcaran/aoc2023/day3"
 	"github.com/delcaran/aoc2023/day4"
 	"github.com/delcaran/aoc2023/day5"
+	"github.com/delcaran/aoc2023/day6"
 )
 
 //go:embed day1/input.txt
@@ -28,6 +29,9 @@ var day4_input string
 
 //go:embed day5/input.txt
 var day5_input string
+
+//go:embed day6/input.txt
+var day6_input string
 
 func main() {
 	day := 0
@@ -51,6 +55,8 @@ func main() {
 		fmt.Println(day4.Run(day4_input))
 	case 5:
 		fmt.Println(day5.Run(day5_input))
+	case 6:
+		fmt.Println(day6.Run(day6_input))
 	default:
 		log.Fatal("Day not done")
 	}
