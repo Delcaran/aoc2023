@@ -25,8 +25,7 @@ type hand struct {
 	winnings int
 }
 
-func (h hand) find_type() int {
-	var hand_type int
+func (h hand) map_cards() map[rune]int {
 	labels := make(map[rune]int)
 	for _, r := range h.cards {
 		_, found := labels[r]
@@ -36,6 +35,13 @@ func (h hand) find_type() int {
 			labels[r] = 1
 		}
 	}
+
+	return labels
+}
+
+func (h hand) find_type_simple() int {
+	var hand_type int
+	labels := h.map_cards()
 	max_same_cards := 0
 	for x := range labels {
 		max_same_cards = max(max_same_cards, labels[x])
@@ -64,12 +70,50 @@ func (h hand) find_type() int {
 	return hand_type * power
 }
 
-func (h *hand) calc_value() {
-	const card_value = "23456789TJQKA"
+func (h hand) find_type(jokers bool) int {
+	if jokers {
+		// find most numerous card
+		labels := h.map_cards()
+		max_same_cards := 0
+		max_card := 'J'
+		for x := range labels {
+			if x != 'J' {
+				if max_same_cards < labels[x] {
+					max_same_cards = labels[x]
+					max_card = x
+				} else {
+					if max_same_cards == labels[x] {
+						val_current := get_card_value(max_card, jokers)
+						val_new := get_card_value(x, jokers)
+						if val_new > val_current {
+							max_card = x
+						}
+					}
+				}
+			}
+		}
+		if max_card == 'J' {
+			max_card = 'A'
+		}
+		// replace jokers with that card
+		h.cards = strings.ReplaceAll(h.cards, "J", string(max_card))
+	}
+	return h.find_type_simple()
+}
+
+func get_card_value(card rune, jokers bool) int {
+	card_value := "23456789TJQKA"
+	if jokers {
+		card_value = "J23456789TQKA"
+	}
+	return strings.IndexRune(card_value, card)
+}
+
+func (h *hand) calc_value(jokers bool) {
 	powers := []int{8, 6, 4, 2, 0}
-	h.value = h.find_type()
+	h.value = h.find_type(jokers)
 	for i, r := range h.cards {
-		val := strings.IndexRune(card_value, r)
+		val := get_card_value(r, jokers)
 		value := val * int(math.Pow10(powers[i]))
 		h.value += value
 	}
@@ -123,7 +167,7 @@ func part1(content string) int {
 				log.Fatal(err)
 			}
 			h.bet = bet
-			h.calc_value()
+			h.calc_value(false)
 			hands = append(hands, h)
 		}
 	}
@@ -138,7 +182,29 @@ func part1(content string) int {
 }
 
 func part2(content string) int {
-	return 0
+	var hands []hand
+	for _, line := range strings.Split(content, "\n") {
+		if len(line) > 0 {
+			var h hand
+			data := strings.Fields(line)
+			h.cards = data[0]
+			bet, err := strconv.Atoi(data[1])
+			if err != nil {
+				log.Fatal(err)
+			}
+			h.bet = bet
+			h.calc_value(true)
+			hands = append(hands, h)
+		}
+	}
+	sorted := mergeSort(hands)
+	winnings := 0
+	for rank := range sorted {
+		sorted[rank].calc_win(rank + 1)
+		winnings += sorted[rank].winnings
+	}
+
+	return winnings
 }
 
 func Run(content string) (int, int, error) {
