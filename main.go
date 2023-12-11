@@ -13,6 +13,7 @@ import (
 	"github.com/delcaran/aoc2023/day4"
 	"github.com/delcaran/aoc2023/day5"
 	"github.com/delcaran/aoc2023/day6"
+	"github.com/delcaran/aoc2023/day7"
 )
 
 //go:embed day1/input.txt
