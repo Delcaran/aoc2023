@@ -246,8 +246,8 @@ func part2(a *almanac) int {
 	return lowest
 }
 
-func Run(content string) (int, int, error) {
+func Run(content string) (int, int) {
 	almanac := initialize(content)
 
-	return part1(&almanac), part2(&almanac), nil
+	return part1(&almanac), part2(&almanac)
 }

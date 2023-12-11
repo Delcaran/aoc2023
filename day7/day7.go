@@ -207,6 +207,6 @@ func part2(content string) int {
 	return winnings
 }
 
-func Run(content string) (int, int, error) {
-	return part1(content), part2(content), nil
+func Run(content string) (int, int) {
+	return part1(content), part2(content)
 }

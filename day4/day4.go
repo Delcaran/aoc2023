@@ -125,8 +125,8 @@ func (l *lottery) play() int {
 	return l.played
 }
 
-func Run(content string) (int, int, error) {
+func Run(content string) (int, int) {
 	var l lottery
 	l.init(content)
-	return l.points(), l.play(), nil
+	return l.points(), l.play()
 }

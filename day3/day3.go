@@ -312,11 +312,11 @@ func check_num(num_str string, valid bool) int {
 	return 0
 }
 
-func Run(content string) (int, int, error) {
+func Run(content string) (int, int) {
 	var m schematic
 	m.init(content)
 	m.run()
 	m.print()
 
-	return m.part1(), m.part2(), nil
+	return m.part1(), m.part2()
 }

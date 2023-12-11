@@ -69,6 +69,6 @@ func Part2(content string) int {
 	return sum
 }
 
-func Run(content string) (int, int, error) {
-	return Part1(content), Part2(content), nil
+func Run(content string) (int, int) {
+	return Part1(content), Part2(content)
 }
