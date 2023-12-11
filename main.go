@@ -33,6 +33,9 @@ var day5_input string
 //go:embed day6/input.txt
 var day6_input string
 
+//go:embed day7/input.txt
+var day7_input string
+
 func main() {
 	day := 0
 	var err error
@@ -57,6 +60,8 @@ func main() {
 		fmt.Println(day5.Run(day5_input))
 	case 6:
 		fmt.Println(day6.Run(day6_input))
+	case 7:
+		fmt.Println(day7.Run(day7_input))
 	default:
 		log.Fatal("Day not done")
 	}
