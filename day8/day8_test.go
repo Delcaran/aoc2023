@@ -16,20 +16,20 @@ var input_2 string
 
 func TestRun(t *testing.T) {
 	want_part1_1 := 2
-	part1_1, _ := Run(input_1_1)
+	part1_1 := Part1(input_1_1)
 	if part1_1 != want_part1_1 {
-		t.Fatalf(`Run 1 -> %d != %d`, part1_1, want_part1_1)
+		t.Fatalf(`Part1 1 -> %d != %d`, part1_1, want_part1_1)
 	}
 
 	want_part1_2 := 6
-	part1_2, _ := Run(input_1_2)
+	part1_2 := Part1(input_1_2)
 	if part1_2 != want_part1_2 {
-		t.Fatalf(`Run 2 -> %d != %d`, part1_2, want_part1_2)
+		t.Fatalf(`Part1 2 -> %d != %d`, part1_2, want_part1_2)
 	}
 
 	want_part2 := 6
-	_, part2 := Run(input_2)
+	part2 := Part2(input_2)
 	if part2 != want_part2 {
-		t.Fatalf(`Run 2 -> %d != %d`, part2, want_part2)
+		t.Fatalf(`Part2 -> %d != %d`, part2, want_part2)
 	}
 }
