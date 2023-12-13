@@ -1,6 +1,8 @@
 package day8
 
 import (
+	"log"
+	"math/big"
 	"regexp"
 	"strings"
 )
@@ -66,21 +68,56 @@ func follow_map(full_map map[string][2]string, order read_order, begin string, e
 	return moves
 }
 
-func follow_ghost_map(order read_order, full_map map[string][2]string, start_keys []string) int {
-	moves := 0
-	keys := start_keys
+type position struct {
+	key       string
+	order_idx int
+	move      int
+}
+
+type loop struct {
+	begin_move int
+	end_move   int
+	size       int
+}
+
+func get_z_ending(full_map map[string][2]string, order read_order, begin string) ([]int, loop) {
 	step := true
+	key := begin
+	var path []position
+	var loop loop
+	move := 0
+	path = append(path, position{key: key, order_idx: order.current, move: move})
+	//log.Printf("%d : %s %d", move, key, order.current)
 	for step {
-		step = false
-		moves += 1
-		read_index := order.read()
-		for idx, k := range keys {
-			//log.Printf("Move %d step %d", moves, idx)
-			keys[idx] = full_map[k][read_index]
-			step = step || keys[idx][len(keys[idx])-1] != 'Z'
+		step = true
+		key = full_map[key][order.read()]
+		move += 1
+		curr_post := position{key: key, order_idx: order.current, move: move}
+		//log.Printf("%d : %s %d", curr_post.move, curr_post.key, curr_post.order_idx)
+
+		for x := len(path) - 1; x >= 0; x-- {
+			oldpos := path[x]
+			if oldpos.key == curr_post.key && oldpos.order_idx == curr_post.order_idx {
+				loop.begin_move = oldpos.move
+				loop.end_move = curr_post.move - 1
+				loop.size = curr_post.move - oldpos.move
+				//log.Printf("%s %d -> %s %d", curr_post.key, curr_post.order_idx, oldpos.key, oldpos.order_idx)
+				step = false
+				break
+			}
+		}
+
+		if step {
+			path = append(path, curr_post)
 		}
 	}
-	return moves
+	var z_endings []int
+	for _, pos := range path {
+		if pos.key[len(pos.key)-1] == 'Z' {
+			z_endings = append(z_endings, pos.move)
+		}
+	}
+	return z_endings, loop
 }
 
 func Part1(content string) int {
@@ -88,8 +125,38 @@ func Part1(content string) int {
 	return follow_map(full_map, order, "AAA", "ZZZ")
 }
 
+func calc_lcm(a *big.Int, b *big.Int) big.Int {
+	var gcd, x big.Int
+	gcd.GCD(nil, nil, a, b)
+	x.Div(a, &gcd).Mul(&x, b)
+	return x
+}
+
 func Part2(content string) int {
-	return follow_ghost_map(build_map(content, true))
+	order, full_map, keys := build_map(content, true)
+
+	z_endings := make(map[string][]int)
+	loops := make(map[string]loop)
+	var zs []*big.Int
+	for _, k := range keys {
+		z_endings[k], loops[k] = get_z_ending(full_map, order, k)
+		log.Printf("%s : %d (%d->%d) | %d", k, z_endings[k], loops[k].begin_move, loops[k].end_move, loops[k].size)
+		for _, z := range z_endings[k] {
+			zs = append(zs, big.NewInt(int64(z)))
+		}
+	}
+
+	// Use LCM, should work with Z-ending all at the end of the loop as it looks like
+	// from examples and input
+	var lcm big.Int
+	for idx, x := range zs {
+		if idx == 0 {
+			lcm = *x
+		} else {
+			lcm = calc_lcm(&lcm, x)
+		}
+	}
+	return int(lcm.Int64())
 }
 
 func Run(content string) (int, int) {
