@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/delcaran/aoc2023/day1"
+	"github.com/delcaran/aoc2023/day10"
 	"github.com/delcaran/aoc2023/day2"
 	"github.com/delcaran/aoc2023/day3"
 	"github.com/delcaran/aoc2023/day4"
@@ -45,6 +46,9 @@ var day8_input string
 //go:embed day9/input.txt
 var day9_input string
 
+//go:embed day10/input.txt
+var day10_input string
+
 func main() {
 	day := 0
 	var err error
@@ -75,6 +79,8 @@ func main() {
 		fmt.Println(day8.Run(day8_input))
 	case 9:
 		fmt.Println(day9.Run(day9_input))
+	case 10:
+		fmt.Println(day10.Run(day10_input))
 	default:
 		log.Fatal("Day not done")
 	}
