@@ -74,7 +74,7 @@ func Part2(content string) int {
 		- "diffuse" L and R
 		- if L or R finds the borders, the other mark is on the tiles I need
 	*/
-	return 0
+	return island.count_inner()
 }
 
 func Run(content string) (int, int) {

@@ -45,8 +45,14 @@ func (p *vertex) print() string {
 }
 
 func (p *vertex) mark(pos int) {
-	if p.relpos != PATH {
+	if p != nil && p.relpos != PATH {
 		p.relpos = pos
+	}
+}
+
+func (p *vertex) absord(x *vertex) {
+	if x != nil && (x.relpos == LEFT || x.relpos == RIGHT) {
+		p.relpos = x.relpos
 	}
 }
 

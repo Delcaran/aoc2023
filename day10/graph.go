@@ -177,6 +177,46 @@ func (island *graph) mark_pipes(prev *vertex, current *vertex) {
 	}
 }
 
+func (island *graph) diffuse() {
+	holes := 1
+	for holes > 0 {
+		holes = 0
+		for row := 0; row < len(island.vertexes); row++ {
+			for col := 0; col < len(island.vertexes[row]); col++ {
+				pipe := island.vertexes[row][col]
+				if pipe.relpos == NONE {
+					holes += 1
+					pipe.absord(island.get_pipe(row-1, col))
+					pipe.absord(island.get_pipe(row+1, col))
+					pipe.absord(island.get_pipe(row, col-1))
+					pipe.absord(island.get_pipe(row, col+1))
+				}
+			}
+		}
+	}
+}
+
+func (island *graph) count_inner() int {
+	color := NONE
+	inner := 0
+	for row := 0; row < len(island.vertexes); row++ {
+		for col := 0; col < len(island.vertexes[row]); col++ {
+			pipe := island.vertexes[row][col]
+			if color == NONE {
+				if pipe.relpos == LEFT {
+					color = RIGHT
+				}
+				if pipe.relpos == RIGHT {
+					color = LEFT
+				}
+			} else if pipe.relpos == color {
+				inner += 1
+			}
+		}
+	}
+	return inner
+}
+
 func (island *graph) walk() {
 	if len(island.start.edges) != 2 {
 		log.Fatalf("S is not a valid starting point with %d links", len(island.start.edges))
@@ -195,5 +235,6 @@ func (island *graph) walk() {
 		current.end = true
 		// walk has been walked, tiles have been marked
 		// now marked tiles will be spread
+		island.diffuse()
 	}
 }
