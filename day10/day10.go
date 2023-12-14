@@ -24,10 +24,13 @@ func (e *edge) get_other(x *vertex) *vertex {
 }
 
 func (e *edge) unlink(x *vertex) {
-	if x.same(e.a) {
+	if e.a != nil && x.same(e.a) {
 		e.a = nil
-	} else {
+		return
+	}
+	if e.b != nil && x.same(e.b) {
 		e.b = nil
+		return
 	}
 }
 
