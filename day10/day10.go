@@ -1,7 +1,6 @@
 package day10
 
 import (
-	"log"
 	"strings"
 )
 
@@ -58,45 +57,24 @@ func build_island(content string) graph {
 
 func Part1(content string) int {
 	island := build_island(content)
-	if len(island.start.edges) != 2 {
-		log.Fatalf("S is not a valid starting point with %d links", len(island.start.edges))
-	} else {
-		s_pipe := island.start
-		var current_1, current_2 *vertex
-		for _, p := range s_pipe.edges {
-			if p != nil {
-				if current_1 == nil {
-					current_1 = p.get_other(s_pipe)
-				} else {
-					current_2 = p.get_other(s_pipe)
-				}
-			}
-		}
-		distance := 1
-		prev_1 := s_pipe
-		prev_2 := s_pipe
-		if current_1 != nil && current_2 != nil {
-			for !current_1.same(current_2) {
-				log.Println(distance)
-				next_1 := current_1.get_next(prev_1)
-				prev_1 = current_1
-				current_1 = next_1
-				next_2 := current_2.get_next(prev_2)
-				prev_2 = current_2
-				current_2 = next_2
-				distance += 1
-			}
-		} else {
-			log.Fatal("S pipe is floating all alone")
-		}
-		return distance
-	}
-	return -1
+	distance := island.double_walk()
+	island.print()
+	return distance
 }
 
 func Part2(content string) int {
-	sum := 0
-	return sum
+	island := build_island(content)
+	island.walk()
+	island.print()
+	/*
+		IDEA: run the walk and mark left/right
+		- run the path in one direction
+		- mark left cells with L
+		- mark right cells with R
+		- "diffuse" L and R
+		- if L or R finds the borders, the other mark is on the tiles I need
+	*/
+	return 0
 }
 
 func Run(content string) (int, int) {

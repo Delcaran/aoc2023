@@ -1,5 +1,10 @@
 package day10
 
+import (
+	"fmt"
+	"log"
+)
+
 type graph struct {
 	start    *vertex
 	vertexes map[int]map[int]*vertex
@@ -73,5 +78,122 @@ func (island *graph) remove_useless_links(useless []coord) {
 	for _, c := range useless {
 		pipe := island.vertexes[c.row][c.col]
 		pipe.unlink()
+	}
+}
+
+func (island *graph) print() {
+	fmt.Print("\n")
+	for row := 0; row < len(island.vertexes); row++ {
+		for col := 0; col < len(island.vertexes[row]); col++ {
+			pipe := island.vertexes[row][col]
+			fmt.Print(pipe.print())
+		}
+		fmt.Print("\n")
+	}
+	fmt.Print("\n")
+}
+
+func (island *graph) double_walk() int {
+	if len(island.start.edges) != 2 {
+		log.Fatalf("S is not a valid starting point with %d links", len(island.start.edges))
+	} else {
+		s_pipe := island.start
+		s_pipe.relpos = PATH
+		var current_1, current_2 *vertex
+		for _, p := range s_pipe.edges {
+			if p != nil {
+				if current_1 == nil {
+					current_1 = p.get_other(s_pipe)
+					current_1.relpos = PATH
+				} else {
+					current_2 = p.get_other(s_pipe)
+					current_1.relpos = PATH
+				}
+			}
+		}
+		distance := 1
+		prev_1 := s_pipe
+		prev_2 := s_pipe
+		if current_1 != nil && current_2 != nil {
+			for !current_1.same(current_2) {
+				next_1 := current_1.get_next(prev_1)
+				prev_1 = current_1
+				current_1 = next_1
+				next_2 := current_2.get_next(prev_2)
+				prev_2 = current_2
+				current_2 = next_2
+				distance += 1
+			}
+			current_1.end = true
+			current_2.end = true
+		} else {
+			log.Fatal("S pipe is floating all alone")
+		}
+		return distance
+	}
+	return -1
+}
+
+func (island *graph) mark_pipes(prev *vertex, current *vertex) {
+	prev_col := prev.loc.col
+	prev_row := prev.loc.row
+	curr_col := current.loc.col
+	curr_row := current.loc.row
+
+	if prev_col == curr_col {
+		e := prev_col + 1
+		w := prev_col - 1
+		// vertical
+		if prev_row < curr_row {
+			// north -> south
+			island.get_pipe(prev_row, e).mark(LEFT)
+			island.get_pipe(curr_row, e).mark(LEFT)
+			island.get_pipe(prev_row, w).mark(RIGHT)
+			island.get_pipe(curr_row, w).mark(RIGHT)
+		} else {
+			// south -> north
+			island.get_pipe(prev_row, w).mark(LEFT)
+			island.get_pipe(curr_row, w).mark(LEFT)
+			island.get_pipe(prev_row, e).mark(RIGHT)
+			island.get_pipe(curr_row, e).mark(RIGHT)
+		}
+	} else {
+		n := prev_row - 1
+		s := prev_row + 1
+		// horizontal
+		if prev_col < curr_col {
+			// west -> east
+			island.get_pipe(n, prev_col).mark(LEFT)
+			island.get_pipe(n, curr_col).mark(LEFT)
+			island.get_pipe(s, prev_col).mark(RIGHT)
+			island.get_pipe(s, curr_col).mark(RIGHT)
+		} else {
+			// east -> west
+			island.get_pipe(s, prev_col).mark(LEFT)
+			island.get_pipe(s, curr_col).mark(LEFT)
+			island.get_pipe(n, prev_col).mark(RIGHT)
+			island.get_pipe(n, curr_col).mark(RIGHT)
+		}
+	}
+}
+
+func (island *graph) walk() {
+	if len(island.start.edges) != 2 {
+		log.Fatalf("S is not a valid starting point with %d links", len(island.start.edges))
+	} else {
+		s_pipe := island.start
+		s_pipe.relpos = PATH
+		current := s_pipe.edges[0].get_other(s_pipe)
+		current.relpos = PATH
+		prev := s_pipe
+		for !current.same(s_pipe) {
+			next := current.get_next(prev)
+			prev = current
+			current = next
+			island.mark_pipes(prev, current)
+		}
+		current.end = true
+		// walk has been walked, tiles have been marked
+		// now marked tiles will be spread
 	}
 }

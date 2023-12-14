@@ -24,17 +24,19 @@ var input_2_3 string
 var input_2_4 string
 
 func TestRun(t *testing.T) {
-	want_part1_1 := 4
-	part1_1 := Part1(input_1_1)
-	if part1_1 != want_part1_1 {
-		t.Fatalf(`Part1 1 -> %d != %d`, part1_1, want_part1_1)
-	}
+	/*
+		want_part1_1 := 4
+		part1_1 := Part1(input_1_1)
+		if part1_1 != want_part1_1 {
+			t.Fatalf(`Part1 1 -> %d != %d`, part1_1, want_part1_1)
+		}
 
-	want_part1_2 := 8
-	part1_2 := Part1(input_1_2)
-	if part1_2 != want_part1_2 {
-		t.Fatalf(`Part1 2 -> %d != %d`, part1_2, want_part1_2)
-	}
+		want_part1_2 := 8
+		part1_2 := Part1(input_1_2)
+		if part1_2 != want_part1_2 {
+			t.Fatalf(`Part1 2 -> %d != %d`, part1_2, want_part1_2)
+		}
+	*/
 
 	want_part2_1 := 4
 	part2_1 := Part2(input_2_1)

@@ -1,17 +1,61 @@
 package day10
 
-import "log"
+import (
+	"log"
+
+	"github.com/fatih/color"
+)
+
+const (
+	NONE  = iota
+	PATH  = iota
+	LEFT  = iota
+	RIGHT = iota
+)
 
 type vertex struct {
-	loc   coord
-	kind  rune
-	edges []*edge
+	loc    coord
+	kind   rune
+	edges  []*edge
+	relpos int
+	end    bool
+}
+
+func (p *vertex) print() string {
+	col := color.New(color.FgBlack)
+	if p.relpos == PATH {
+		if p.kind == 'S' {
+			col = col.Add(color.BgGreen)
+		} else if p.end {
+			col = col.Add(color.BgRed)
+		} else {
+			col = col.Add(color.BgYellow)
+		}
+	} else {
+		switch p.relpos {
+		case LEFT:
+			col = col.Add(color.BgMagenta)
+		case RIGHT:
+			col = col.Add(color.BgCyan)
+		default:
+			col = col.Add(color.BgWhite)
+		}
+	}
+	return col.Sprintf("%c", p.kind)
+}
+
+func (p *vertex) mark(pos int) {
+	if p.relpos != PATH {
+		p.relpos = pos
+	}
 }
 
 func (p *vertex) get_next(incoming *vertex) *vertex {
+	p.relpos = PATH
 	for _, e := range p.edges {
 		other_side := e.get_other(p)
 		if !other_side.same(incoming) {
+			other_side.relpos = PATH
 			return other_side
 		}
 	}
