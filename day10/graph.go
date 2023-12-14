@@ -48,16 +48,17 @@ func (island *graph) cleanup() {
 		for row := range island.vertexes {
 			for col := range island.vertexes[row] {
 				pipe := island.vertexes[row][col]
+				num_edges := len(pipe.edges)
 				if pipe.kind == 'S' {
 					// remove dead links from S
-					for i := len(pipe.edges) - 1; i >= 0; i-- {
+					for i := num_edges - 1; i >= 0; i-- {
 						edge := pipe.edges[i]
 						if edge.get_other(pipe) == nil {
 							pipe.edges = append(pipe.edges[:i], pipe.edges[i+1:]...)
 						}
 					}
 				} else {
-					if len(pipe.edges) != 2 {
+					if num_edges > 0 && num_edges != 2 {
 						deletable = append(deletable, pipe.loc)
 					}
 				}
@@ -72,6 +73,5 @@ func (island *graph) remove_useless_links(useless []coord) {
 	for _, c := range useless {
 		pipe := island.vertexes[c.row][c.col]
 		pipe.unlink()
-		delete(island.vertexes[c.row], c.col)
 	}
 }

@@ -42,13 +42,11 @@ func build_island(content string) graph {
 		if len(line) > 0 {
 			island.vertexes[row] = make(map[int]*vertex)
 			for col, ru := range line {
-				if ru != '.' {
-					location := coord{row: row, col: col}
-					pipe := &vertex{kind: ru, loc: location}
-					island.vertexes[row][col] = pipe
-					if ru == 'S' {
-						island.start = pipe
-					}
+				location := coord{row: row, col: col}
+				pipe := &vertex{kind: ru, loc: location}
+				island.vertexes[row][col] = pipe
+				if ru == 'S' {
+					island.start = pipe
 				}
 			}
 		}
