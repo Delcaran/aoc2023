@@ -6,11 +6,9 @@ import (
 )
 
 type sector struct {
-	row          int
-	col          int
-	expanded_row int
-	expanded_col int
-	galaxy       bool
+	row    int
+	col    int
+	galaxy bool
 }
 
 func (s *sector) print() string {
@@ -20,18 +18,33 @@ func (s *sector) print() string {
 	return fmt.Sprintf(" %d.%d ", s.row, s.col)
 }
 
-func (start *sector) distance_from(end *sector) int {
+func (start *sector) distance_from(end *sector, sky *skymap) int {
 	// taxicab distance
-	col_distance := max(start.expanded_col, end.expanded_col) - min(start.expanded_col, end.expanded_col)
-	row_distance := max(start.expanded_row, end.expanded_row) - min(start.expanded_row, end.expanded_row)
-	return col_distance + row_distance
+	x_distance := max(start.col, end.col) - min(start.col, end.col)
+	y_distance := max(start.row, end.row) - min(start.row, end.row)
+
+	// factor in age of the universe
+	for _, ex := range sky.empty_cols {
+		if min(start.col, end.col) <= ex && ex <= max(start.col, end.col) {
+			x_distance += sky.expansion - 1
+		}
+	}
+	for _, ey := range sky.empty_rows {
+		if min(start.row, end.row) <= ey && ey <= max(start.row, end.row) {
+			y_distance += sky.expansion - 1
+		}
+	}
+
+	return x_distance + y_distance
 }
 
 type skymap struct {
-	galaxies         []*sector
-	sectors          [][]*sector
-	expanded_sectors [][]*sector
-	distance_matrix  map[int]map[int]int
+	expansion       int
+	galaxies        []*sector
+	sectors         [][]*sector
+	empty_rows      []int
+	empty_cols      []int
+	distance_matrix map[int]map[int]int
 }
 
 func (s *skymap) print() {
@@ -45,38 +58,25 @@ func (s *skymap) print() {
 	fmt.Print("\n")
 }
 
-func (s *skymap) print_expanded() {
-	for row := 0; row < len(s.expanded_sectors); row++ {
-		for col := 0; col < len(s.expanded_sectors[row]); col++ {
-			sect := s.expanded_sectors[row][col]
-			fmt.Print(sect.print())
-		}
-		fmt.Print("\n")
-	}
-	fmt.Print("\n")
-}
-
-func build_sky(content string) skymap {
+func build_sky(content string, expansion int) skymap {
 	var sky skymap
-	var empty_cols []int
+	sky.expansion = expansion
 	for row, l := range strings.Split(content, "\n") {
 		line := strings.TrimSpace(l)
 		if len(line) > 0 {
 			sky.sectors = append(sky.sectors, make([]*sector, len(line)))
-			sky.expanded_sectors = append(sky.expanded_sectors, make([]*sector, len(line)))
 			galaxy_in_row := false
 			for col, ru := range line {
 				if row == 0 {
-					empty_cols = append(empty_cols, col)
+					sky.empty_cols = append(sky.empty_cols, col)
 				}
 				s := &sector{row: row, col: col, galaxy: ru == '#'}
 				sky.sectors[len(sky.sectors)-1][col] = s
-				sky.expanded_sectors[len(sky.expanded_sectors)-1][col] = s
 				if s.galaxy {
 					galaxy_in_row = true
-					for idx := 0; idx < len(empty_cols); idx++ {
-						if empty_cols[idx] == col {
-							empty_cols = append(empty_cols[:idx], empty_cols[idx+1:]...)
+					for idx := 0; idx < len(sky.empty_cols); idx++ {
+						if sky.empty_cols[idx] == col {
+							sky.empty_cols = append(sky.empty_cols[:idx], sky.empty_cols[idx+1:]...)
 						}
 					}
 					sky.galaxies = append(sky.galaxies, s)
@@ -84,27 +84,8 @@ func build_sky(content string) skymap {
 			}
 
 			if !galaxy_in_row {
-				sky.expanded_sectors = append(sky.expanded_sectors, sky.expanded_sectors[len(sky.expanded_sectors)-1])
+				sky.empty_rows = append(sky.empty_rows, row)
 			}
-		}
-	}
-	// check empty cols
-	expansions := 0
-	for _, empty_col := range empty_cols {
-		for row := 0; row < len(sky.expanded_sectors); row++ {
-			idx := empty_col + expansions
-			tmp := sky.expanded_sectors[row][idx]
-			sky.expanded_sectors[row] = append(sky.expanded_sectors[row][:idx+1], sky.expanded_sectors[row][idx:]...)
-			sky.expanded_sectors[row][idx] = tmp
-		}
-		expansions += 1
-	}
-
-	// update values
-	for row := 0; row < len(sky.expanded_sectors); row++ {
-		for col := 0; col < len(sky.expanded_sectors[row]); col++ {
-			sky.expanded_sectors[row][col].expanded_row = row
-			sky.expanded_sectors[row][col].expanded_col = col
 		}
 	}
 
@@ -127,7 +108,7 @@ func (sky *skymap) galaxy_distance() int {
 				} else {
 					start := sky.galaxies[x]
 					end := sky.galaxies[y]
-					distance := start.distance_from(end)
+					distance := start.distance_from(end, sky)
 					sky.distance_matrix[x][y] = distance
 					sum += distance
 				}
@@ -139,14 +120,17 @@ func (sky *skymap) galaxy_distance() int {
 }
 
 func Part1(content string) int {
-	sky := build_sky(content)
-	sky.print()
-	sky.print_expanded()
+	sky := build_sky(content, 2)
+	//sky.print()
+	//sky.print_expanded()
 	return sky.galaxy_distance()
 }
 
 func Part2(content string) int {
-	return 0
+	sky := build_sky(content, 1000000)
+	//sky.print()
+	//sky.print_expanded()
+	return sky.galaxy_distance()
 }
 
 func Run(content string) (int, int) {
