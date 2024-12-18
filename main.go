@@ -7,52 +7,52 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/delcaran/aoc2023/day1"
-	"github.com/delcaran/aoc2023/day10"
-	"github.com/delcaran/aoc2023/day11"
+	//"github.com/delcaran/aoc2023/day1"
+	//"github.com/delcaran/aoc2023/day10"
+	//"github.com/delcaran/aoc2023/day11"
 	"github.com/delcaran/aoc2023/day12"
-	"github.com/delcaran/aoc2023/day2"
-	"github.com/delcaran/aoc2023/day3"
-	"github.com/delcaran/aoc2023/day4"
-	"github.com/delcaran/aoc2023/day5"
-	"github.com/delcaran/aoc2023/day6"
-	"github.com/delcaran/aoc2023/day7"
-	"github.com/delcaran/aoc2023/day8"
-	"github.com/delcaran/aoc2023/day9"
+	//"github.com/delcaran/aoc2023/day2"
+	//"github.com/delcaran/aoc2023/day3"
+	//"github.com/delcaran/aoc2023/day4"
+	//"github.com/delcaran/aoc2023/day5"
+	//"github.com/delcaran/aoc2023/day6"
+	//"github.com/delcaran/aoc2023/day7"
+	//"github.com/delcaran/aoc2023/day8"
+	//"github.com/delcaran/aoc2023/day9"
 )
 
-//go:embed day1/input.txt
-var day1_input string
-
-//go:embed day2/input.txt
-var day2_input string
-
-//go:embed day3/input.txt
-var day3_input string
-
-//go:embed day4/input.txt
-var day4_input string
-
-//go:embed day5/input.txt
-var day5_input string
-
-//go:embed day6/input.txt
-var day6_input string
-
-//go:embed day7/input.txt
-var day7_input string
-
-//go:embed day8/input.txt
-var day8_input string
-
-//go:embed day9/input.txt
-var day9_input string
-
-//go:embed day10/input.txt
-var day10_input string
-
-//go:embed day11/input.txt
-var day11_input string
+////go:embed day1/input.txt
+//var day1_input string
+//
+////go:embed day2/input.txt
+//var day2_input string
+//
+////go:embed day3/input.txt
+//var day3_input string
+//
+////go:embed day4/input.txt
+//var day4_input string
+//
+////go:embed day5/input.txt
+//var day5_input string
+//
+////go:embed day6/input.txt
+//var day6_input string
+//
+////go:embed day7/input.txt
+//var day7_input string
+//
+////go:embed day8/input.txt
+//var day8_input string
+//
+////go:embed day9/input.txt
+//var day9_input string
+//
+////go:embed day10/input.txt
+//var day10_input string
+//
+////go:embed day11/input.txt
+//var day11_input string
 
 //go:embed day12/input.txt
 var day12_input string
@@ -69,28 +69,28 @@ func main() {
 	}
 
 	switch day {
-	case 1:
-		fmt.Println(day1.Run(day1_input))
-	case 2:
-		fmt.Println(day2.Run(day2_input))
-	case 3:
-		fmt.Println(day3.Run(day3_input))
-	case 4:
-		fmt.Println(day4.Run(day4_input))
-	case 5:
-		fmt.Println(day5.Run(day5_input))
-	case 6:
-		fmt.Println(day6.Run(day6_input))
-	case 7:
-		fmt.Println(day7.Run(day7_input))
-	case 8:
-		fmt.Println(day8.Run(day8_input))
-	case 9:
-		fmt.Println(day9.Run(day9_input))
-	case 10:
-		fmt.Println(day10.Run(day10_input))
-	case 11:
-		fmt.Println(day11.Run(day11_input))
+	//case 1:
+	//	fmt.Println(day1.Run(day1_input))
+	//case 2:
+	//	fmt.Println(day2.Run(day2_input))
+	//case 3:
+	//	fmt.Println(day3.Run(day3_input))
+	//case 4:
+	//	fmt.Println(day4.Run(day4_input))
+	//case 5:
+	//	fmt.Println(day5.Run(day5_input))
+	//case 6:
+	//	fmt.Println(day6.Run(day6_input))
+	//case 7:
+	//	fmt.Println(day7.Run(day7_input))
+	//case 8:
+	//	fmt.Println(day8.Run(day8_input))
+	//case 9:
+	//	fmt.Println(day9.Run(day9_input))
+	//case 10:
+	//	fmt.Println(day10.Run(day10_input))
+	//case 11:
+	//	fmt.Println(day11.Run(day11_input))
 	case 12:
 		fmt.Println(day12.Run(day12_input))
 	default:
