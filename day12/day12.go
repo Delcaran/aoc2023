@@ -128,11 +128,20 @@ func build_group(size int) string {
 	return group
 }
 
+func get_expansion_indexes(basic_map string) []int {
+	for idx, ch := range basic_map {
+	}
+}
+
 func expand_map(basic_map string) []string {
 	expanded_maps := make([]string, 0)
+	prevch := ' '
 	for idx, ch := range basic_map {
 		if ch == '.' {
-			expanded_maps = append(expanded_maps, basic_map[:idx]+"."+basic_map[idx+1:])
+			if prevch == '#' {
+				expanded_maps = append(expanded_maps, basic_map[:idx-1]+"."+basic_map[idx:])
+			}
+			prevch = ch
 		} else {
 			if idx == 0 {
 				expanded_maps = append(expanded_maps, "."+basic_map)
@@ -146,16 +155,17 @@ func expand_map(basic_map string) []string {
 }
 
 func build_maps(damage_groups []int, length int) []string {
-	dot_positions := len(damage_groups) + 1
 	groups := make([]string, 0)
 	for _, size := range damage_groups {
 		groups = append(groups, build_group(size))
 	}
 	basic_map := strings.Join(groups, ".")
-	missing_dots := length - len(basic_map)
 	maps := make([]string, 0)
-	for x := 0; x < missing_dots; x++ {
-
+	maps = append(maps, basic_map)
+	for _, curr_map := range maps
+	for run := true; run; run = len(maps[len(maps)-1]) == length {
+		expanded_maps := expand_map(maps[len(maps)-1])
+		maps = append(maps, expanded_maps...)
 	}
 	return maps
 }
