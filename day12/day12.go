@@ -15,7 +15,6 @@ const (
 type fieldRow struct {
 	springsMap     string
 	damagedRecords string
-	arrangements   int
 }
 
 type field struct {
@@ -37,8 +36,8 @@ func parseInput(content string) field {
 	return f
 }
 
-func minify(input string) string {
-	var minified string
+func minify(input string) (minified string) {
+	// remove consecutive dots
 	for pos, char := range input {
 		if pos == 0 {
 			minified = string(char)
@@ -51,37 +50,6 @@ func minify(input string) string {
 		}
 	}
 	return minified
-}
-
-func countDamagedGroups(springsMap string) string {
-	damagedRecords := make([]int, 0)
-	count := 0
-	for _, char := range springsMap {
-		if char == '#' {
-			count = count + 1
-		}
-		if char == '.' {
-			if count > 0 {
-				damagedRecords = append(damagedRecords, count)
-				count = 0
-			}
-		}
-		if char == '?' {
-			panic("count_damaged_groups() MUST be called with fully reconstructed strings")
-		}
-	}
-	if count > 0 {
-		damagedRecords = append(damagedRecords, count)
-		count = 0
-	}
-	var recordstring string
-	for _, n := range damagedRecords {
-		if len(recordstring) > 0 {
-			recordstring = recordstring + ","
-		}
-		recordstring = recordstring + fmt.Sprint(n)
-	}
-	return recordstring
 }
 
 func (f *field) unfold() {
@@ -97,27 +65,6 @@ func (f *field) unfold() {
 		}
 		f.rows[rown].springsMap = strings.Join(unfoldedMap, "?")
 		f.rows[rown].damagedRecords = strings.Join(unfoldedRecords, ",")
-	}
-}
-
-func addToSolved(solved map[string][]string, solution string) {
-	_, exists := solved[solution]
-	if !exists {
-		solved[solution] = make([]string, 0)
-	}
-	solvedRecords, ok := solved[solution]
-	if ok {
-		found := false
-		damaged_records := countDamagedGroups(solution)
-		for _, x := range solvedRecords {
-			if x == damaged_records {
-				found = true
-				break
-			}
-		}
-		if !found {
-			solved[solution] = append(solved[solution], damaged_records)
-		}
 	}
 }
 
@@ -157,7 +104,10 @@ func buildMaps(damageGroups []int, length int) map[string]int {
 	}
 	basicMap := strings.Join(groups, ".")
 	maps := map[string]int{basicMap: len(basicMap)}
+	count := 0
 	for currLen := len(basicMap); currLen != length; {
+		count++
+		fmt.Printf("Expansion %d\n", count)
 		tmp := map[string]int{}
 		for currMap := range maps {
 			for expandedMap, lenMap := range expandMap(currMap) {
@@ -188,25 +138,6 @@ func solveByBuild(rowMap string, damageRecords string) int {
 	return len(buildedMaps)
 }
 
-func solveBruteForce(rowMap string, solved map[string][]string) {
-	_, ok := solved[rowMap]
-	if !ok {
-		firstUnknown := strings.Index(rowMap, "?")
-		if firstUnknown == -1 {
-			// end recursion: memorize string and all substrings
-			for idx := range rowMap {
-				substring := rowMap[idx:]
-				addToSolved(solved, substring)
-				addToSolved(solved, minify(substring))
-			}
-		} else {
-			// recursion
-			solveBruteForce(rowMap[:firstUnknown]+string('#')+rowMap[firstUnknown+1:], solved)
-			solveBruteForce(rowMap[:firstUnknown]+string('.')+rowMap[firstUnknown+1:], solved)
-		}
-	}
-}
-
 func mapMatch(original string, solved string) bool {
 	if len(original) == len(solved) {
 		for idx := 0; idx < len(original); idx++ {
@@ -221,41 +152,12 @@ func mapMatch(original string, solved string) bool {
 	return false
 }
 
-func part1Brutal(f field) int {
-	stringsSolved := make(map[string][]string)
-	for rown := range f.rows {
-		solvingMap := f.rows[rown].springsMap
-		solvingRecords := f.rows[rown].damagedRecords
-		solveBruteForce(solvingMap, stringsSolved)
-		// all possible combinations of the row are found. Now check if something matches
-		for solved_map, solvedRecords := range stringsSolved {
-			if mapMatch(solvingMap, solved_map) {
-				for _, solvedRecord := range solvedRecords {
-					if solvingRecords == solvedRecord {
-						f.rows[rown].arrangements += 1
-					}
-				}
-			}
-		}
-	}
-	arrangements := 0
-	for rown := range f.rows {
-		arrangements += f.rows[rown].arrangements
-	}
-	return arrangements
-}
-
-func part1Build(f field) int {
+func Part1(f field) int {
 	arrangements := 0
 	for rown := range f.rows {
 		arrangements += solveByBuild(f.rows[rown].springsMap, f.rows[rown].damagedRecords)
 	}
 	return arrangements
-}
-
-func Part1(f field) int {
-	//return part1Brutal(f)
-	return part1Build(f)
 }
 
 func Part2(f field) int {
@@ -265,7 +167,7 @@ func Part2(f field) int {
 
 func Run(content string) (int, int) {
 	fieldInfo := parseInput(content)
-	return Part1(fieldInfo), 525152
-	//return 21, Part2(fieldInfo)
+	//return Part1(fieldInfo), 525152
+	return 21, Part2(fieldInfo)
 	//return Part1(fieldInfo), Part2(fieldInfo)
 }
