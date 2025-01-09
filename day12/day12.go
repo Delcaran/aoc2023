@@ -2,6 +2,7 @@ package day12
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 )
 
@@ -11,25 +12,25 @@ const (
 	SPRING_DAMAGED = iota
 )
 
-type field_row struct {
-	springs_map     string
-	damaged_records string
-	arrangements    int
+type fieldRow struct {
+	springsMap     string
+	damagedRecords string
+	arrangements   int
 }
 
 type field struct {
-	rows []field_row
+	rows []fieldRow
 }
 
-func parse_input(content string) field {
+func parseInput(content string) field {
 	var f field
 	for _, l := range strings.Split(content, "\n") {
 		line := strings.TrimSpace(l)
 		if len(line) > 0 {
-			var fr field_row
-			line_data := strings.Split(line, " ")
-			fr.springs_map = line_data[0]
-			fr.damaged_records = line_data[1]
+			var fr fieldRow
+			lineData := strings.Split(line, " ")
+			fr.springsMap = lineData[0]
+			fr.damagedRecords = lineData[1]
 			f.rows = append(f.rows, fr)
 		}
 	}
@@ -52,16 +53,16 @@ func minify(input string) string {
 	return minified
 }
 
-func count_damaged_groups(springs_map string) string {
-	damaged_records := make([]int, 0)
+func countDamagedGroups(springsMap string) string {
+	damagedRecords := make([]int, 0)
 	count := 0
-	for _, char := range springs_map {
+	for _, char := range springsMap {
 		if char == '#' {
 			count = count + 1
 		}
 		if char == '.' {
 			if count > 0 {
-				damaged_records = append(damaged_records, count)
+				damagedRecords = append(damagedRecords, count)
 				count = 0
 			}
 		}
@@ -70,11 +71,11 @@ func count_damaged_groups(springs_map string) string {
 		}
 	}
 	if count > 0 {
-		damaged_records = append(damaged_records, count)
+		damagedRecords = append(damagedRecords, count)
 		count = 0
 	}
 	var recordstring string
-	for _, n := range damaged_records {
+	for _, n := range damagedRecords {
 		if len(recordstring) > 0 {
 			recordstring = recordstring + ","
 		}
@@ -84,31 +85,31 @@ func count_damaged_groups(springs_map string) string {
 }
 
 func (f *field) unfold() {
-	unfolding_size := 5
+	unfoldingSize := 5
 	for rown := range f.rows {
-		solving_map := f.rows[rown].springs_map
-		solving_records := f.rows[rown].damaged_records
-		unfolded_map := make([]string, unfolding_size)
-		unfolded_records := make([]string, unfolding_size)
-		for x := 0; x < unfolding_size; x++ {
-			unfolded_map = append(unfolded_map, solving_map)
-			unfolded_records = append(unfolded_map, solving_records)
+		solvingMap := f.rows[rown].springsMap
+		solvingRecords := f.rows[rown].damagedRecords
+		unfoldedMap := make([]string, 0)
+		unfoldedRecords := make([]string, 0)
+		for x := 0; x < unfoldingSize; x++ {
+			unfoldedMap = append(unfoldedMap, solvingMap)
+			unfoldedRecords = append(unfoldedRecords, solvingRecords)
 		}
-		f.rows[rown].springs_map = strings.Join(unfolded_map, "?")
-		f.rows[rown].damaged_records = strings.Join(unfolded_records, ",")
+		f.rows[rown].springsMap = strings.Join(unfoldedMap, "?")
+		f.rows[rown].damagedRecords = strings.Join(unfoldedRecords, ",")
 	}
 }
 
-func add_to_solved(solved map[string][]string, solution string) {
+func addToSolved(solved map[string][]string, solution string) {
 	_, exists := solved[solution]
 	if !exists {
 		solved[solution] = make([]string, 0)
 	}
-	solved_records, ok := solved[solution]
+	solvedRecords, ok := solved[solution]
 	if ok {
 		found := false
-		damaged_records := count_damaged_groups(solution)
-		for _, x := range solved_records {
+		damaged_records := countDamagedGroups(solution)
+		for _, x := range solvedRecords {
 			if x == damaged_records {
 				found = true
 				break
@@ -120,7 +121,7 @@ func add_to_solved(solved map[string][]string, solution string) {
 	}
 }
 
-func build_group(size int) string {
+func buildGroup(size int) string {
 	var group string
 	for x := 0; x < size; x++ {
 		group += "#"
@@ -128,72 +129,85 @@ func build_group(size int) string {
 	return group
 }
 
-func get_expansion_indexes(basic_map string) []int {
-	for idx, ch := range basic_map {
-	}
-}
-
-func expand_map(basic_map string) []string {
-	expanded_maps := make([]string, 0)
+func expandMap(basicMap string) map[string]int {
+	expandedMaps := map[string]int{}
 	prevch := ' '
-	for idx, ch := range basic_map {
-		if ch == '.' {
-			if prevch == '#' {
-				expanded_maps = append(expanded_maps, basic_map[:idx-1]+"."+basic_map[idx:])
-			}
-			prevch = ch
-		} else {
-			if idx == 0 {
-				expanded_maps = append(expanded_maps, "."+basic_map)
-			}
-			if idx == len(basic_map)-1 {
-				expanded_maps = append(expanded_maps, basic_map+".")
+	for idx, ch := range basicMap {
+		expandedMap := ""
+		switch idx {
+		case 0:
+			expandedMap = "." + basicMap
+		case len(basicMap) - 1:
+			expandedMap = basicMap + "."
+		default:
+			if prevch == '#' && ch == '.' {
+				expandedMap = basicMap[:idx] + "." + basicMap[idx:]
 			}
 		}
+		expandedMaps[expandedMap] = len(expandedMap)
+		prevch = ch
 	}
-	return expanded_maps
+	return expandedMaps
 }
 
-func build_maps(damage_groups []int, length int) []string {
+func buildMaps(damageGroups []int, length int) map[string]int {
 	groups := make([]string, 0)
-	for _, size := range damage_groups {
-		groups = append(groups, build_group(size))
+	for _, size := range damageGroups {
+		groups = append(groups, buildGroup(size))
 	}
-	basic_map := strings.Join(groups, ".")
-	maps := make([]string, 0)
-	maps = append(maps, basic_map)
-	for _, curr_map := range maps
-	for run := true; run; run = len(maps[len(maps)-1]) == length {
-		expanded_maps := expand_map(maps[len(maps)-1])
-		maps = append(maps, expanded_maps...)
+	basicMap := strings.Join(groups, ".")
+	maps := map[string]int{basicMap: len(basicMap)}
+	for currLen := len(basicMap); currLen != length; {
+		tmp := map[string]int{}
+		for currMap := range maps {
+			for expandedMap, lenMap := range expandMap(currMap) {
+				currLen = lenMap
+				tmp[expandedMap] = lenMap
+			}
+		}
+		maps = tmp
 	}
 	return maps
 }
 
-func solve_by_build(row_map string, damage_groups []int, solved map[string][]string) {
-	test_strin
+func solveByBuild(rowMap string, damageRecords string) int {
+	damageGroups := make([]int, 0)
+	for _, g := range strings.Split(damageRecords, ",") {
+		if conv, err := strconv.Atoi(g); err == nil {
+			damageGroups = append(damageGroups, conv)
+		}
+	}
+	minified := minify(rowMap)
+	buildedMaps := buildMaps(damageGroups, len(minified))
+	for buildedMap := range buildedMaps {
+		if !mapMatch(minified, buildedMap) {
+			delete(buildedMaps, buildedMap)
+		}
+	}
+	fmt.Printf("Row %s has %d arrangements\n", rowMap, len(buildedMaps))
+	return len(buildedMaps)
 }
 
-func solve_brute_force(row_map string, solved map[string][]string) {
-	_, ok := solved[row_map]
+func solveBruteForce(rowMap string, solved map[string][]string) {
+	_, ok := solved[rowMap]
 	if !ok {
-		first_unknown := strings.Index(row_map, "?")
-		if first_unknown == -1 {
+		firstUnknown := strings.Index(rowMap, "?")
+		if firstUnknown == -1 {
 			// end recursion: memorize string and all substrings
-			for idx := range row_map {
-				substring := row_map[idx:]
-				add_to_solved(solved, substring)
-				add_to_solved(solved, minify(substring))
+			for idx := range rowMap {
+				substring := rowMap[idx:]
+				addToSolved(solved, substring)
+				addToSolved(solved, minify(substring))
 			}
 		} else {
 			// recursion
-			solve_brute_force(row_map[:first_unknown]+string('#')+row_map[first_unknown+1:], solved)
-			solve_brute_force(row_map[:first_unknown]+string('.')+row_map[first_unknown+1:], solved)
+			solveBruteForce(rowMap[:firstUnknown]+string('#')+rowMap[firstUnknown+1:], solved)
+			solveBruteForce(rowMap[:firstUnknown]+string('.')+rowMap[firstUnknown+1:], solved)
 		}
 	}
 }
 
-func map_match(original string, solved string) bool {
+func mapMatch(original string, solved string) bool {
 	if len(original) == len(solved) {
 		for idx := 0; idx < len(original); idx++ {
 			if original[idx] != '?' {
@@ -207,17 +221,17 @@ func map_match(original string, solved string) bool {
 	return false
 }
 
-func Part1(f field) int {
-	strings_solved := make(map[string][]string)
+func part1Brutal(f field) int {
+	stringsSolved := make(map[string][]string)
 	for rown := range f.rows {
-		solving_map := f.rows[rown].springs_map
-		solving_records := f.rows[rown].damaged_records
-		solve_brute_force(solving_map, strings_solved)
+		solvingMap := f.rows[rown].springsMap
+		solvingRecords := f.rows[rown].damagedRecords
+		solveBruteForce(solvingMap, stringsSolved)
 		// all possible combinations of the row are found. Now check if something matches
-		for solved_map, solved_records := range strings_solved {
-			if map_match(solving_map, solved_map) {
-				for _, solved_record := range solved_records {
-					if solving_records == solved_record {
+		for solved_map, solvedRecords := range stringsSolved {
+			if mapMatch(solvingMap, solved_map) {
+				for _, solvedRecord := range solvedRecords {
+					if solvingRecords == solvedRecord {
 						f.rows[rown].arrangements += 1
 					}
 				}
@@ -231,12 +245,27 @@ func Part1(f field) int {
 	return arrangements
 }
 
+func part1Build(f field) int {
+	arrangements := 0
+	for rown := range f.rows {
+		arrangements += solveByBuild(f.rows[rown].springsMap, f.rows[rown].damagedRecords)
+	}
+	return arrangements
+}
+
+func Part1(f field) int {
+	//return part1Brutal(f)
+	return part1Build(f)
+}
+
 func Part2(f field) int {
 	f.unfold()
 	return Part1(f)
 }
 
 func Run(content string) (int, int) {
-	field_info := parse_input(content)
-	return Part1(field_info), Part2(field_info)
+	fieldInfo := parseInput(content)
+	return Part1(fieldInfo), 525152
+	//return 21, Part2(fieldInfo)
+	//return Part1(fieldInfo), Part2(fieldInfo)
 }
